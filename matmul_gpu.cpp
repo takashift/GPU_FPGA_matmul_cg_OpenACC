@@ -264,9 +264,9 @@ int main(int argc, char *argv[])
 	}
 
 	const char *name = argv[1];
-	const int numdata_h = atoi(argv[2]));
-	const int valsize = atoi(argv[3]));
-	const int numtry = atoi(argv[4]));
+	const int numdata_h = atoi(argv[2]);
+	const int valsize = atoi(argv[3]);
+	const int numtry = atoi(argv[4]);
 	const unsigned long numbyte = numdata_h * numdata_h * sizeof(float); // this sample uses "float"
 
 	printf("numdata_h: %d, valsize: %d, numtry: &d\n", numdata_h, valsize, numtry);
@@ -275,8 +275,8 @@ int main(int argc, char *argv[])
 	///////////////////////////////////////////
 
 	/***** GPU *****/
-	static const int numthread = 16;
-	const int numblock = (numdata_h % numthread) ? (numdata_h / numthread) + 1 : (numdata_h / numthread);
+	// static const int numthread = 16;
+	// const int numblock = (numdata_h % numthread) ? (numdata_h / numthread) + 1 : (numdata_h / numthread);
 	float *h_a, *h_b, *h_c, *c_CPU, *h_vec_b, *h_vec_mul, *vec_b_CPU;
 
 	h_a = (float *)malloc(numbyte);
