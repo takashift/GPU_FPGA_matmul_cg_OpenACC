@@ -1,9 +1,8 @@
 #!/bin/sh
 
 module load quartus/17.1.2.304 aocl/a10pl4_4
-#pgi
-module load cuda/9.2.148
-module load pgi/18.10
+# module load cuda/9.2.148
+# module load pgi/18.10
 
 export OPENARC_ARCH=3
 export ACC_DEVICE_TYPE=acc_device_not_host
