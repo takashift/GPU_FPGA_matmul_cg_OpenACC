@@ -302,11 +302,10 @@ int main(int argc, char *argv[])
 	}
 
 	/***** FPGA *****/
-	static CalcOnFPGA calc_on_fpga;
 	int N = numdata_h;
 	int VAL_SIZE = valsize;
 	int K = numtry;
-	float *FPGA_calc_result; // = malloc(N * sizeof(float));
+	float *FPGA_calc_result; // X_result;
 	float *VAL;
 	int *COL_IND;
 	int *ROW_PTR;
@@ -333,8 +332,8 @@ int main(int argc, char *argv[])
 	/***** GPU *****/
 	std::chrono::system_clock::time_point start_gpu = std::chrono::system_clock::now();
 
-	matmul(d_a, d_b, d_c, numdata_h);
-	matrix_vector_malti(d_c, d_vec_mul, d_vec_b, numdata_h);
+	matmul(h_a, h_b, h_c, numdata_h);
+	matrix_vector_malti(h_c, h_vec_mul, h_vec_b, numdata_h);
 
 	std::chrono::system_clock::time_point end_gpu = std::chrono::system_clock::now();
 
@@ -349,7 +348,7 @@ int main(int argc, char *argv[])
 
 	std::chrono::system_clock::time_point start_fpga = std::chrono::system_clock::now();
 
-	funcFPGA(X_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
+	funcFPGA(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
 	
 	std::chrono::system_clock::time_point end_fpga = std::chrono::system_clock::now();
 
@@ -365,7 +364,7 @@ int main(int argc, char *argv[])
 	// h_matrix_vector_malti(c_CPU, h_vec_mul, vec_b_CPU, numdata_h);    // 本番はコメントアウトして良い
 
 	// verify_gpu(h_c, c_CPU, numdata_h*numdata_h); // 行列積チェック
-	verify_gpu(h_vec_b, vec_b_CPU, numdata_h); // d_vec_b チェック
+	verify_gpu(h_vec_b, vec_b_CPU, numdata_h); // h_vec_b チェック
 
 	verify_fpga(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
 
