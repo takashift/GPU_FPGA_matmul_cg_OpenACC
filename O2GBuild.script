@@ -1,13 +1,13 @@
 #! /bin/bash
 if [ $# -ge 2 ]; then
-	inputSize=$1
-	verLevel=$2
+        inputSize=$1
+        verLevel=$2
 elif [ $# -eq 1 ]; then
-	inputSize=$1
-	verLevel=0
+        inputSize=$1
+        verLevel=0
 else
-	inputSize=512
-	verLevel=0
+        inputSize=512
+        verLevel=0
 fi
 
 openarcrt="../../../../openarcrt"
@@ -30,3 +30,10 @@ if [ "$openarcrt" != "" ]; then
 fi
 
 java -classpath $openarclib/cetus.jar:$openarclib/antlr.jar openacc.exec.ACC2GPUDriver -verbosity=${verLevel} -gpuConfFile=openarcConf.txt *.c
+echo ""
+echo "====> To compile the translated output file:"
+echo "\$ make"
+echo ""
+echo "====> To run the compiled binary:"
+echo "\$ cd bin; matmul_ACC"
+echo ""
