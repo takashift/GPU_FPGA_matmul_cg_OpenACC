@@ -26,7 +26,7 @@ void funcFPGA(
 {
 
 	temp_rr1 = 0.0f;
-#pragma acc loop seq
+#pragma acc loop independent
 	for(int i = 0; i < N; i++){
 		ROW_PTR_local[i] = ROW_PTR[i];
 		x[i] = 0.0f;
@@ -36,13 +36,13 @@ void funcFPGA(
 	}
 	ROW_PTR_local[N] = ROW_PTR[N];
 
-#pragma acc loop seq
+#pragma acc loop independent
 	for(int i = 0; i < VAL_SIZE; i++){
 		COL_IND_local[i] = COL_IND[i];
 		VAL_local[i] = VAL[i];
 	}
 
-#pragma acc loop seq
+#pragma acc loop independent
 	for(int i = 0; i < K; i++){
 		temp_pap = 0.0f;
 #pragma acc loop reduction(+:temp_pap)
@@ -68,14 +68,14 @@ void funcFPGA(
 
 		beta = temp_rr2 / temp_rr1;
 
-#pragma acc loop seq
+#pragma acc loop independent
 		for(int j = 0; j < N; j++){
 			p[j] = r[j] + beta * p[j];
 		}
 		temp_rr1 = temp_rr2;
 
 	}
-#pragma acc loop seq
+#pragma acc loop independent
 	for(int j = 0; j < N; j++){
 		X_result[j] = x[j];
 	}
