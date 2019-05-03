@@ -257,16 +257,15 @@ int main(int argc, char *argv[])
 		std::cout << "usage: ./host <name> <numdata_h> <valsize> <numtry>"   << std::endl; exit(0);
 		exit(0);
 	}
-	if (argc != 5)
+	if (argc != 4)
 	{
 		std::cerr << "Error! The number of arguments is wrong."              << std::endl; exit(1);
 		exit(1);
 	}
 
-	const char *name = argv[1];
-	const int numdata_h = atoi(argv[2]);
-	const int valsize = atoi(argv[3]);
-	const int numtry = atoi(argv[4]);
+	const int numdata_h = atoi(argv[1]);
+	const int valsize = atoi(argv[2]);
+	const int numtry = atoi(argv[3]);
 	const unsigned long numbyte = numdata_h * numdata_h * sizeof(float); // this sample uses "float"
 
 	printf("numdata_h: %d, valsize: %d, numtry: &d\n", numdata_h, valsize, numtry);
