@@ -9,6 +9,7 @@ export OPENARC_ARCH=3
 export ACC_DEVICE_TYPE=acc_device_not_host
 export ACC_DEVICE_NUM=0
 export OPENARCRT_UNIFIEDMEM=0
+export OPENARC_FPGA=ARRIA_X
 #export ACC_DEVICE_TYPE=RADEON  # 必要ないかも知れない？
 export openarc=/home/tsunashima/openarc-fpga-master
 ./O2GBuild.script
