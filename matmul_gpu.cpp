@@ -1,6 +1,4 @@
-// #include <iostream>
-#include <stdio.h>
-
+#include <iostream>
 #include <cstdlib>
 #include <cmath>
 #include <vector>
@@ -232,7 +230,7 @@ void verify_fpga(
 // }
 
 	for(int j = 0; j < N; ++j){
-    // printf("FPGA" << FPGA_calc_result[j] << ", CPU"<< x[j]);
+    // std::cout << "FPGA" << FPGA_calc_result[j] << ", CPU"<< x[j] << std::endl;
 		if(FPGA_calc_result[j] != x[j]) {
       error = j;
       break;
@@ -241,13 +239,13 @@ void verify_fpga(
 	}
 
   if (error == N) {
-    printf(std::string(30, '-'));
-    printf("FPGA Verification: PASS");
-    printf("ResultFPGA = %f\n", sum);
+    std::cout << std::string(30, '-') << std::endl;
+    std::cout << "FPGA Verification: PASS" << std::endl;
+    std::cout << "ResultFPGA = " << sum << std::endl;
   } else {
-    printf("Error! FPGA Verification failed...\n");
+    std::cout << "Error! FPGA Verification failed..." << error << std::endl;
   }
-  printf("CG CPU elapsed time: %lf\n usec", std::chrono::duration_cast<std::chrono::microseconds>(end-start).count());
+  std::cout << "CG CPU elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count() << " usec" << std::endl;
 }
 
 int main(int argc, char *argv[])
@@ -256,12 +254,12 @@ int main(int argc, char *argv[])
 	///////////////////////////////////////////
 	if (argc == 1)
 	{
-		printf("usage: ./host <numdata_h> <valsize> <numtry>\n"  );
+		std::cout << "usage: ./host <numdata_h> <valsize> <numtry>"   << std::endl;
 		exit(0);
 	}
 	if (argc != 4)
 	{
-		printf("Error! The number of arguments is wrong.\n"      );
+		std::cerr << "Error! The number of arguments is wrong."       << std::endl;
 		exit(1);
 	}
 
@@ -353,11 +351,11 @@ int main(int argc, char *argv[])
 	
 	std::chrono::system_clock::time_point end_fpga = std::chrono::system_clock::now();
 
-	printf("GPU  elapsed time: %lf usec\n", std::chrono::duration_cast<std::chrono::microseconds>(end_gpu-start_gpu).count());
-	// printf(std::string(30, '-'));
+	std::cout << "GPU  elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end_gpu-start_gpu).count() << " usec" << std::endl;
+	std::cout << std::string(30, '-') << std::endl;
 
-	printf("FPGA elapsed time: %lf usec\n", std::chrono::duration_cast<std::chrono::microseconds>(end_fpga-start_fpga).count());
-	// printf(std::string(30, '-'));
+	std::cout << "FPGA elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end_fpga-start_fpga).count() << " usec" << std::endl;
+	std::cout << std::string(30, '-') << std::endl;
 
 	// verification
 	///////////////////////////////////////////
