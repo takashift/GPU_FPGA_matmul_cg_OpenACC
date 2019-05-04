@@ -254,12 +254,12 @@ int main(int argc, char *argv[])
 	///////////////////////////////////////////
 	if (argc == 1)
 	{
-		std::cout << "usage: ./host <numdata_h> <valsize> <numtry>"   << std::endl; exit(0);
+		std::cout << "usage: ./host <numdata_h> <valsize> <numtry>"   << std::endl;
 		exit(0);
 	}
 	if (argc != 4)
 	{
-		std::cerr << "Error! The number of arguments is wrong."              << std::endl; exit(1);
+		std::cerr << "Error! The number of arguments is wrong."       << std::endl;
 		exit(1);
 	}
 
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
 	const int numtry = atoi(argv[3]);
 	const unsigned long numbyte = numdata_h * numdata_h * sizeof(float); // this sample uses "float"
 
-	printf("numdata_h: %d, valsize: %d, numtry: &d\n", numdata_h, valsize, numtry);
+	printf("numdata_h: %d, valsize: %d, numtry: %d\n", numdata_h, valsize, numtry);
 
 	// host memory settings
 	///////////////////////////////////////////

@@ -1,6 +1,8 @@
 #!/bin/sh
 
-module load quartus/17.1.2.304 aocl/a10pl4_4 cuda
+module load quartus/17.1.2.304 aocl/a10pl4_4
+module load cuda/9.2.148
+module load pgi/18.10
 export OPENARC_ARCH=3
 export ACC_DEVICE_TYPE=acc_device_not_host
 export ACC_DEVICE_NUM=0
@@ -17,5 +19,5 @@ export OPENARC_FPGA=ARRIA_X
 #aocl diagnose
 #./each_block2_gpu_ACC
 
-#pgi
-./
+bin/gpu_fpga_matmul_cg_ACC 1000 1000 1000
+
