@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 	///////////////////////////////////////////
 	if (argc == 1)
 	{
-		std::cout << "usage: ./host <name> <numdata_h> <valsize> <numtry>"   << std::endl; exit(0);
+		std::cout << "usage: ./host <numdata_h> <valsize> <numtry>"   << std::endl; exit(0);
 		exit(0);
 	}
 	if (argc != 4)
