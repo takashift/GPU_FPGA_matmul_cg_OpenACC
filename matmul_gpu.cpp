@@ -1,4 +1,6 @@
 // #include <iostream>
+#include <stdio.h>
+
 #include <cstdlib>
 #include <cmath>
 #include <vector>
@@ -259,7 +261,7 @@ int main(int argc, char *argv[])
 	}
 	if (argc != 4)
 	{
-		std::cerr << "Error! The number of arguments is wrong.\n"      );
+		printf("Error! The number of arguments is wrong.\n"      );
 		exit(1);
 	}
 
