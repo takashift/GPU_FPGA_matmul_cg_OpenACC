@@ -23,7 +23,7 @@ void funcFPGA(
 	float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE], alfa, beta;
 	float VAL_local[V_SIZE];
 	int COL_IND_local[V_SIZE], ROW_PTR_local[BLOCK_SIZE + 1];
-	float temp_sum, temp_pap, temp_rr1, temp_rr2;
+	float temp_sum=0.0f, temp_pap, temp_rr1, temp_rr2;
 
 	temp_rr1 = 0.0f;
 #pragma acc loop independent
@@ -45,15 +45,20 @@ void funcFPGA(
 #pragma acc loop independent
 	for(int i = 0; i < K; ++i){
 		temp_pap = 0.0f;
-#pragma acc loop reduction(+:temp_pap)
-		for(int j = 0; j < N; ++j){
-			temp_sum = 0.0f;
-#pragma acc loop reduction(+:temp_sum)
-			for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; ++l){
-				temp_sum += p[COL_IND_local[l]] * VAL_local[l];
+		int m = 0, l = ROW_PTR_local[0];
+#pragma acc loop reduction(+:temp_pap, temp_sum)
+		for(int j = 0; j < N*ROW_PTR_local[j + 1]; ++j){
+			// for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; ++l){
+			temp_sum += p[COL_IND_local[l]] * VAL_local[l];
+			// }
+			l++;
+			if(l == ROW_PTR_local[m + 1]) {
+				y[j] = temp_sum;
+				temp_pap += p[j] * temp_sum;
+				temp_sum = 0.0f;
+				++m;
+				l = ROW_PTR_local[m];
 			}
-			y[j] = temp_sum;
-			temp_pap += p[j] * temp_sum;
 		}
 
 		alfa = temp_rr1 / temp_pap;
