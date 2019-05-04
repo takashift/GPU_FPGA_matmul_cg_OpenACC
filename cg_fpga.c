@@ -6,11 +6,11 @@
 #define V_SIZE 200000
 
 void funcFPGA(
-    float* X_result,
-    float* VAL,
-    int* COL_IND,
-    int* ROW_PTR,
-    float* B,
+    float* restrict X_result,
+    float* restrict VAL,
+    int* restrict COL_IND,
+    int* restrict ROW_PTR,
+    float* restrict B,
     int N,
     int K,
     int VAL_SIZE
@@ -51,7 +51,7 @@ void funcFPGA(
 			// for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; ++l){
 			temp_sum += p[COL_IND_local[l]] * VAL_local[l];
 			// }
-			l++;
+			++l;
 			if(l == ROW_PTR_local[m + 1]) {
 				y[j] = temp_sum;
 				temp_pap += p[j] * temp_sum;
