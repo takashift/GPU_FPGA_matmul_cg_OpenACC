@@ -16,7 +16,7 @@ export openarc=/home/tsunashima/openarc-fpga-master
 cp $openarc/make.template.obj $openarc/make.template
 make COMPILE_HOST
 cd cetus_output/
-pgc++ -acc -c -ta=tesla:cc60 -O3 -std=c++11 -mp -Minfo=accel ../matmul_gpu.cpp
+pgc++ -acc -c -ta=tesla,cc60 -fast -O3 -std=c++11 -mp -Minfo=accel ../matmul_gpu.cpp
 cd ..
 cp $openarc/make.template.pgi $openarc/make.template
 make COMPILE_HOST

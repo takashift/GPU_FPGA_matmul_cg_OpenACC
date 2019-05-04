@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "gpu_fpga.h"
 
-#define BLOCK_SIZE 60000
+#define BLOCK_SIZE 38000
 #define V_SIZE 200000
 
 void funcFPGA(
@@ -27,7 +27,7 @@ void funcFPGA(
 
 	temp_rr1 = 0.0f;
 #pragma acc loop independent
-	for(int i = 0; i < N; i++){
+	for(int i = 0; i < N; ++i){
 		ROW_PTR_local[i] = ROW_PTR[i];
 		x[i] = 0.0f;
 		r[i] = B[i];
@@ -37,19 +37,19 @@ void funcFPGA(
 	ROW_PTR_local[N] = ROW_PTR[N];
 
 #pragma acc loop independent
-	for(int i = 0; i < VAL_SIZE; i++){
+	for(int i = 0; i < VAL_SIZE; ++i){
 		COL_IND_local[i] = COL_IND[i];
 		VAL_local[i] = VAL[i];
 	}
 
 #pragma acc loop independent
-	for(int i = 0; i < K; i++){
+	for(int i = 0; i < K; ++i){
 		temp_pap = 0.0f;
 #pragma acc loop reduction(+:temp_pap)
-		for(int j = 0; j < N; j++){
+		for(int j = 0; j < N; ++j){
 			temp_sum = 0.0f;
 #pragma acc loop reduction(+:temp_sum)
-			for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; l++){
+			for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; ++l){
 				temp_sum += p[COL_IND_local[l]] * VAL_local[l];
 			}
 			y[j] = temp_sum;
@@ -60,7 +60,7 @@ void funcFPGA(
 
 		temp_rr2 = 0.0f;
 #pragma acc loop reduction(+:temp_rr2)
-		for(int j = 0; j < N; j++){
+		for(int j = 0; j < N; ++j){
 			x[j] += alfa * p[j];
 			r[j] -= alfa * y[j];
 			temp_rr2 += r[j] * r[j];
@@ -69,14 +69,14 @@ void funcFPGA(
 		beta = temp_rr2 / temp_rr1;
 
 #pragma acc loop independent
-		for(int j = 0; j < N; j++){
+		for(int j = 0; j < N; ++j){
 			p[j] = r[j] + beta * p[j];
 		}
 		temp_rr1 = temp_rr2;
 
 	}
 #pragma acc loop independent
-	for(int j = 0; j < N; j++){
+	for(int j = 0; j < N; ++j){
 		X_result[j] = x[j];
 	}
 }

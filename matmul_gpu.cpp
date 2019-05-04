@@ -14,10 +14,10 @@ void matmul(float *a, float *b, float *c, int N)
 #pragma acc data copyout(c[:N*N]) copyin(a[:N*N], b[:N*N])
 #pragma acc kernels
 	{
-#pragma acc loop independent
+#pragma acc loop gang(N/32) vector(32) independent
 		for (i = 0; i < N; ++i)
 		{
-#pragma acc loop independent
+#pragma acc loop gang(N/32) vector(32) independent
 			for (j = 0; j < N; ++j)
 			{
 				float sum = 0.0;
@@ -38,7 +38,7 @@ void matrix_vector_malti(float *a, float *b, float *c, int N)
 #pragma acc data copyout(c[:N]) copyin(a[:N*N], b[:N])
 #pragma acc kernels
 	{
-#pragma acc loop independent
+#pragma acc loop independent gang(N/32) vector(32)
 		for (i = 0; i < N; ++i)
 		{
 			float sum = 0.0;
