@@ -4,6 +4,7 @@ module load quartus/17.1.2.304 aocl/a10pl4_4
 module load cuda/9.2.148
 module load pgi/18.10
 export OPENARC_ARCH=3
+export OMP_NUM_THREADS=26
 
 #export openarc=/home/tsunashima/openarc-fpga-master
 #./O2GBuild.script

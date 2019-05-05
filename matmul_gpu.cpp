@@ -58,8 +58,8 @@ void MatrixMultiplication_openmp(float *a, float *b, float *c, int N)
 	// omp_set_num_threads(numstream);
 	if (omp_get_thread_num() == 0)
 	{
-		printf("Number of OpenMP threads %d\n", omp_get_num_threads());
-		chunk = N / omp_get_num_threads();
+		printf("Number of OpenMP threads %d\n", omp_get_max_threads());
+		chunk = N / omp_get_max_threads();
 	}
 // #endif
 
@@ -86,8 +86,8 @@ void h_matrix_vector_malti(float *a, float *b, float *c, int N)
 // #ifdef _OPENMP
 	if (omp_get_thread_num() == 0)
 	{
-		printf("Number of OpenMP threads %d\n", omp_get_num_threads());
-		chunk = N / omp_get_num_threads();
+		printf("Number of OpenMP threads %d\n", omp_get_max_threads());
+		chunk = N / omp_get_max_threads();
 	}
 // #endif
 
@@ -185,7 +185,7 @@ void verify_fpga(
 		temp_pap = 0.0f;
 		for(int j = 0; j < N; ++j){
 			temp_sum = 0.0f;
-			for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; l++){
+			for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; ++l){
 				temp_sum += p[COL_IND_local[l]] * VAL_local[l];
 			}
 			y[j] = temp_sum;
