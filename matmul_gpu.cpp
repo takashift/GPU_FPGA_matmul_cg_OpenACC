@@ -54,14 +54,14 @@ void MatrixMultiplication_openmp(float *a, float *b, float *c, int N)
 {
 	int i, j, k;
 	int chunk;
-#ifdef _OPENMP
+// #ifdef _OPENMP
 	// omp_set_num_threads(numstream);
 	if (omp_get_thread_num() == 0)
 	{
 		printf("Number of OpenMP threads %d\n", omp_get_num_threads());
 		chunk = N / omp_get_num_threads();
 	}
-#endif
+// #endif
 
 #pragma omp parallel shared(a, b, c, chunk) private(i, j, k)
 	{
@@ -83,13 +83,13 @@ void h_matrix_vector_malti(float *a, float *b, float *c, int N)
 {
 	int i, j;
 	int chunk;
-#ifdef _OPENMP
+// #ifdef _OPENMP
 	if (omp_get_thread_num() == 0)
 	{
 		printf("Number of OpenMP threads %d\n", omp_get_num_threads());
 		chunk = N / omp_get_num_threads();
 	}
-#endif
+// #endif
 
 #pragma omp parallel shared(a, b, c, chunk) private(i, j)
 	{
@@ -110,8 +110,7 @@ void verify_gpu(float *h_c, float *c_CPU, unsigned long N)
 	double gpu_sum = 0.0;
 	double rel_err = 0.0;
 
-#pragma omp parallel for reduction(+ \
-								   : cpu_sum, gpu_sum)
+#pragma omp parallel for reduction(+:cpu_sum, gpu_sum)
 	for (unsigned long i = 0; i < N; ++i)
 	{
 		// printf("(CPU) %f\n", c_CPU[i]);

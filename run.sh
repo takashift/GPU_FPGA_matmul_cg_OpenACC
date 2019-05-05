@@ -16,5 +16,5 @@ export OPENARC_ARCH=3
 #./each_block2_gpu_ACC
 
 cd bin
-./gpu_fpga_matmul_cg_ACC 1000 1000 1000
+./gpu_fpga_matmul_cg_ACC 10000 10000 10000
 
