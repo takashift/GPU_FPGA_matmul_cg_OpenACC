@@ -303,17 +303,19 @@ int main(int argc, char *argv[])
 	}
 
 	/***** FPGA *****/
-	struct sparse_matrix_t* A = load_sparse_matrix(MATRIX_MARKET, "bcsstk17.mtx");
-	assert(A != NULL);
-	int errcode = sparse_matrix_convert(A, CSR);
+	struct sparse_matrix_t* A_ = load_sparse_matrix(MATRIX_MARKET, "bcsstk17.mtx");
+	assert(A_ != NULL);
+	int errcode = sparse_matrix_convert(A_, CSR);
 	if (errcode != 0)
 	{
 		fprintf(stderr, "*** Conversion failed! ***\n");
-		// Note: Don't call destroy_sparse_matrix (A) unless you 
+		// Note: Don't call destroy_sparse_matrix (A_) unless you 
 		// can call free on val, ind and ptr.
-		free(A);
+		free(A_);
 		exit(EXIT_FAILURE);
 	}
+
+  struct crc_matrix_t* A = (struct crc_matrix_t*) A_->repr;
 
 	int N = csr_matrix_num_rows(A)-1; // numdata_h;
 	int VAL_SIZE = csr_matrix_num_cols(A); // valsize;
@@ -383,7 +385,9 @@ int main(int argc, char *argv[])
 
 	// cleanup
 	///////////////////////////////////////////
+  destroy_csr_matrix(_A);
 	destroy_csr_matrix(A);
+	
 
 	return 0;
 }

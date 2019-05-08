@@ -12,6 +12,9 @@ export OPENARCRT_UNIFIEDMEM=0
 export OPENARC_FPGA=ARRIA_X
 #export ACC_DEVICE_TYPE=RADEON  # 必要ないかも知れない？
 export openarc=/home/tsunashima/openarc-fpga-master
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/tsunashima/bebop/sparse_matrix_converter/include:/home/tsunashima/bebop/bebop_util/include
+
+
 #./O2GBuild.script
 cp $openarc/make.template.obj $openarc/make.template
 make COMPILE_HOST
