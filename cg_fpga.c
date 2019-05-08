@@ -7,13 +7,13 @@
 
 void funcFPGA(
     float* restrict X_result,
-    float* restrict VAL,
-    int* restrict COL_IND,
-    int* restrict ROW_PTR,
-    float* restrict B,
-    int N,
-    int K,
-    int VAL_SIZE
+    const float* restrict VAL,
+    const int* restrict COL_IND,
+    const int* restrict ROW_PTR,
+    const float* restrict B,
+    const int N,
+    const int K,
+    const int VAL_SIZE
     )
 {
 #pragma acc data copyin(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N], B[0:N], N, K, VAL_SIZE) copyout(X_result[0:N])

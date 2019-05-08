@@ -5,6 +5,7 @@ module load cuda/9.2.148
 module load pgi/18.10
 export OPENARC_ARCH=3
 export OMP_NUM_THREADS=26
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/tsunashima/bebop/sparse_matrix_converter:/home/tsunashima/bebop/bebop_util
 
 #export openarc=/home/tsunashima/openarc-fpga-master
 #./O2GBuild.script

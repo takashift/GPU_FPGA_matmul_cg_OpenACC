@@ -4,6 +4,9 @@
 #include <vector>
 #include <omp.h>
 #include <chrono>
+#include <bebop/smc/sparse_matrix.h>
+#include <bebop/smc/sparse_matrix_ops.h>
+#include <bebop/smc/csr_matrix.h>
 #include "gpu_fpga.h"
 
 void matmul(float *a, float *b, float *c, int N)
@@ -300,8 +303,20 @@ int main(int argc, char *argv[])
 	}
 
 	/***** FPGA *****/
-	int N = numdata_h;
-	int VAL_SIZE = valsize;
+	struct sparse_matrix_t* A = load_sparse_matrix(MATRIX_MARKET, "bcsstk17.mtx");
+	assert(A != NULL);
+	int errcode = sparse_matrix_convert(A, CSR);
+	if (errcode != 0)
+	{
+		fprintf(stderr, "*** Conversion failed! ***\n");
+		// Note: Don't call destroy_sparse_matrix (A) unless you 
+		// can call free on val, ind and ptr.
+		free(A);
+		exit(EXIT_FAILURE);
+	}
+
+	int N = csr_matrix_num_rows(A)-1; // numdata_h;
+	int VAL_SIZE = csr_matrix_num_cols(A); // valsize;
 	int K = numtry;
 	float *FPGA_calc_result; // X_result;
 	float *VAL;
@@ -309,16 +324,16 @@ int main(int argc, char *argv[])
 	int *ROW_PTR;
 	float *B;
 
-	posix_memalign((void **)&FPGA_calc_result, 64, N * sizeof(float));
-	posix_memalign((void **)&VAL, 64, VAL_SIZE * sizeof(float));
-	posix_memalign((void **)&COL_IND, 64, VAL_SIZE * sizeof(int));
-	posix_memalign((void **)&ROW_PTR, 64, (N + 1) * sizeof(int));
-	posix_memalign((void **)&B, 64, N * sizeof(float));
+  posix_memalign((void **)&FPGA_calc_result, 64, N * sizeof(float));
+  posix_memalign((void **)&VAL, 64, VAL_SIZE * sizeof(float));
+  posix_memalign((void **)&COL_IND, 64, VAL_SIZE * sizeof(int));
+  posix_memalign((void **)&ROW_PTR, 64, (N+1) * sizeof(int));
+  posix_memalign((void **)&B, 64, N * sizeof(float));
 
 	for (int i = 0; i < VAL_SIZE; ++i)
 	{
-		VAL[i] = (i + 1) * 1000000.0; // これだとなぜか検証がうまく通る
-		COL_IND[i] = i;
+		VAL[i] = A.values[i];
+		COL_IND[i] = A.colidx[i];
 	}
 
 	// device memory settings
@@ -339,8 +354,8 @@ int main(int argc, char *argv[])
 	for (int j = 0; j < N; ++j)
 	{
 		FPGA_calc_result[j] = 0;
-		ROW_PTR[j] = j;
-		B[j] = h_vec_b[j] - VAL[j] * 1000000.0; // b - Ax
+		ROW_PTR[j] = A.rowptr[j];
+		B[j] = h_vec_b[j] - VAL[j] * 1; //000000.0; // b - Ax
 	}
 	ROW_PTR[N] = N;
 
@@ -368,6 +383,7 @@ int main(int argc, char *argv[])
 
 	// cleanup
 	///////////////////////////////////////////
+	destroy_csr_matrix(A);
 
 	return 0;
 }
