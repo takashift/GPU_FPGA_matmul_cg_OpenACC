@@ -4,9 +4,11 @@
 #include <omp.h>
 #include <chrono>
 #include <assert.h>
-#include <bebop/smc/sparse_matrix.h>
-#include <bebop/smc/sparse_matrix_ops.h>
-#include <bebop/smc/csr_matrix.h>
+extern "C"{
+	#include <bebop/smc/sparse_matrix.h>
+	#include <bebop/smc/sparse_matrix_ops.h>
+	#include <bebop/smc/csr_matrix.h>
+}
 #include "gpu_fpga.h"
 
 void matmul(float *a, float *b, float *c, int N)
