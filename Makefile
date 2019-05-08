@@ -64,8 +64,8 @@ AOCL_FLAGS ?= -v -c -report
 #########################################################
 # CFLAGS1 = -I/home/tsunashima/bebop/sparse_matrix_converter/include -I/home/tsunashima/bebop/bebop_util/include
 #CFLAGS2 =  
-CLIBS1 = -L/home/tsunashima/bebop/sparse_matrix_converter -L/home/tsunashima/bebop/bebop_util #-lm
-#CLIBS2 = 
+# CLIBS1 = -lm
+CLIBS2 = -L/home/tsunashima/bebop/sparse_matrix_converter -L/home/tsunashima/bebop/bebop_util -lsparse_matrix_converter -lbebop_util
 
 ################################################
 # TARGET is where the output binary is stored. #

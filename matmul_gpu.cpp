@@ -4,6 +4,7 @@
 #include <omp.h>
 #include <chrono>
 #include <cassert>
+#include <cstring>
 extern "C"{
 	#include <bebop/smc/sparse_matrix.h>
 	#include <bebop/smc/sparse_matrix_ops.h>
@@ -254,6 +255,22 @@ void verify_fpga(
 
 int main(int argc, char *argv[])
 {
+	struct sparse_matrix_t* A_ = load_sparse_matrix(MATRIX_MARKET, "bcsstk17.mtx");
+	assert(A_ != NULL);
+	int errcode = sparse_matrix_convert(A_, CSR);
+	if (errcode != 0)
+	{
+		fprintf(stderr, "*** Conversion failed! ***\n");
+		// Note: Don't call destroy_sparse_matrix (A_) unless you 
+		// can call free on val, ind and ptr.
+		free(A_);
+		exit(EXIT_FAILURE);
+	}
+
+  struct csr_matrix_t* A = (struct csr_matrix_t*) A_->repr;
+  assert (A);
+  assert (A->nnz == (A->rowptr[A->m] - A->rowptr[0]));
+
 	// check command line arguments
 	///////////////////////////////////////////
 	if (argc == 1)
@@ -267,9 +284,11 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	const int numdata_h = atoi(argv[1]);
-	const int valsize = atoi(argv[2]);
-	const int numtry = atoi(argv[3]);
+  const int  numdata_h = A->n; // std::stoull(std::string(argv[2]));
+	int N = numdata_h;
+  const int  valsize   = A->nnz;
+	int VAL_SIZE = valsize;
+	const int numtry = std::stoull(std::string(argv[3]));
 	const unsigned long numbyte = numdata_h * numdata_h * sizeof(float); // this sample uses "float"
 
 	printf("numdata_h: %d, valsize: %d, numtry: %d\n", numdata_h, valsize, numtry);
@@ -305,22 +324,6 @@ int main(int argc, char *argv[])
 	}
 
 	/***** FPGA *****/
-	struct sparse_matrix_t* A_ = load_sparse_matrix(MATRIX_MARKET, "bcsstk17.mtx");
-	assert(A_ != NULL);
-	int errcode = sparse_matrix_convert(A_, CSR);
-	if (errcode != 0)
-	{
-		fprintf(stderr, "*** Conversion failed! ***\n");
-		// Note: Don't call destroy_sparse_matrix (A_) unless you 
-		// can call free on val, ind and ptr.
-		free(A_);
-		exit(EXIT_FAILURE);
-	}
-
-  struct const csr_matrix_t* A = (struct csr_matrix_t*) A_->repr;
-
-	int N = csr_matrix_num_rows(A)-1; // numdata_h;
-	int VAL_SIZE = csr_matrix_num_cols(A); // valsize;
 	int K = numtry;
 	float *FPGA_calc_result; // X_result;
 	float *VAL;
@@ -334,11 +337,13 @@ int main(int argc, char *argv[])
   posix_memalign((void **)&ROW_PTR, 64, (N+1) * sizeof(int));
   posix_memalign((void **)&B, 64, N * sizeof(float));
 
-	memcpy(VAL, A->values, VAL_SIZE * sizeof (float));
-	for (int i = 0; i < VAL_SIZE; ++i)
-	{
-		COL_IND[i] = A->colidx[i];
-	}
+  memcpy(VAL, A->values, VAL_SIZE * sizeof (float));
+  memcpy(COL_IND, A->colidx, VAL_SIZE * sizeof (float));
+  memcpy(ROW_PTR, A->rowptr, (N+1) * sizeof (float));
+	// for (int i = 0; i < VAL_SIZE; ++i)
+	// {
+	// 	COL_IND[i] = A->colidx[i];
+	// }
 
 	// device memory settings
 	///////////////////////////////////////////
@@ -358,7 +363,7 @@ int main(int argc, char *argv[])
 	for (int j = 0; j < N; ++j)
 	{
 		FPGA_calc_result[j] = 0;
-		ROW_PTR[j] = A->rowptr[j];
+		// ROW_PTR[j] = A->rowptr[j];
 		B[j] = h_vec_b[j] - VAL[j] * 1; //000000.0; // b - Ax
 	}
 	ROW_PTR[N] = N;
@@ -387,8 +392,8 @@ int main(int argc, char *argv[])
 
 	// cleanup
 	///////////////////////////////////////////
-  destroy_sparse_matrix(A_);
-	destroy_csr_matrix(A);
+  // destroy_sparse_matrix(A_);
+	// destroy_csr_matrix(A);
 	
 
 	return 0;
