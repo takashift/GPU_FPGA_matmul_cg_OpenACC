@@ -332,9 +332,9 @@ int main(int argc, char *argv[])
   posix_memalign((void **)&ROW_PTR, 64, (N+1) * sizeof(int));
   posix_memalign((void **)&B, 64, N * sizeof(float));
 
+	memcpy(VAL, A->values, VAL_SIZE * sizeof (float));
 	for (int i = 0; i < VAL_SIZE; ++i)
 	{
-		VAL[i] = A->values[i];
 		COL_IND[i] = A->colidx[i];
 	}
 
@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
 
 	// cleanup
 	///////////////////////////////////////////
-  destroy_csr_matrix(_A);
+  destroy_csr_matrix(A_);
 	destroy_csr_matrix(A);
 	
 
