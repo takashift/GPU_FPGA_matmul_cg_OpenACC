@@ -19,7 +19,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/tsunashima/bebop/sparse_matrix_con
 cp $openarc/make.template.obj $openarc/make.template
 make COMPILE_HOST
 #make COMPILE_KERNEL
-pgc++ -acc -c -g -ta=tesla,cc60 -fast -O3 -std=c++11 -mp -Minfo=accel matmul_gpu.cpp
+pgc++ -acc -c -g -ta=tesla,cc60 -fast -O3 -std=c++11 -mp -Minfo=accel -I/home/tsunashima/bebop/sparse_matrix_converter/include -I/home/tsunashima/bebop/bebop_util/include matmul_gpu.cpp
 mv matmul_gpu.o cetus_output/
 cp $openarc/make.template.pgi $openarc/make.template
 make COMPILE_HOST

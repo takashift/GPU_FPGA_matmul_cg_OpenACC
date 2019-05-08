@@ -62,9 +62,9 @@ AOCL_FLAGS ?= -v -c -report
 # - CFLAGS2 and CLIBS2 to compile the OpenARC-generated #
 #   output C++ program                                  # 
 #########################################################
-#CFLAGS1 =  
+# CFLAGS1 = -I/home/tsunashima/bebop/sparse_matrix_converter/include -I/home/tsunashima/bebop/bebop_util/include
 #CFLAGS2 =  
-#CLIBS1 = -lm
+CLIBS1 = -L/home/tsunashima/bebop/sparse_matrix_converter -L/home/tsunashima/bebop/bebop_util #-lm
 #CLIBS2 = 
 
 ################################################

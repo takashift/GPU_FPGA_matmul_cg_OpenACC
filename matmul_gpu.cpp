@@ -3,7 +3,7 @@
 #include <cmath>
 #include <omp.h>
 #include <chrono>
-#include <assert.h>
+#include <cassert>
 extern "C"{
 	#include <bebop/smc/sparse_matrix.h>
 	#include <bebop/smc/sparse_matrix_ops.h>
