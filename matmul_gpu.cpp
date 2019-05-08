@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-  struct crc_matrix_t* A = (struct crc_matrix_t*) A_->repr;
+  const struct crc_matrix_t* A = (struct crc_matrix_t*) A_->repr;
 
 	int N = csr_matrix_num_rows(A)-1; // numdata_h;
 	int VAL_SIZE = csr_matrix_num_cols(A); // valsize;
