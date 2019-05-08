@@ -1,9 +1,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
-#include <vector>
 #include <omp.h>
 #include <chrono>
+#include <assert.h>
 #include <bebop/smc/sparse_matrix.h>
 #include <bebop/smc/sparse_matrix_ops.h>
 #include <bebop/smc/csr_matrix.h>
@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
 
 	// cleanup
 	///////////////////////////////////////////
-  destroy_csr_matrix(A_);
+  destroy_sparse_matrix(A_);
 	destroy_csr_matrix(A);
 	
 
