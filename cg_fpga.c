@@ -46,7 +46,7 @@ void funcFPGA(
 	for(int i = 0; i < K; ++i){
 		temp_pap = 0.0f;
 		int j = 0, l = ROW_PTR_local[0];
-#pragma acc loop reduction(+:temp_pap, temp_sum)
+#pragma acc loop seq
 		for(int m = 0; m < VAL_SIZE-ROW_PTR_local[0]; ++m){
 			temp_sum += p[COL_IND_local[l]] * VAL_local[l];
 			++l;
