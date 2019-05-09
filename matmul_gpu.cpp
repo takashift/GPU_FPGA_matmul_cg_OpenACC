@@ -168,7 +168,7 @@ void verify_fpga(
 	float x[N], r[N], p[N], y[N], alfa, beta;
 	float VAL_local[VAL_SIZE];
 	int COL_IND_local[VAL_SIZE], ROW_PTR_local[N + 1];
-	float temp_sum, temp_pap, temp_rr1, temp_rr2, sum = 0;
+	float temp_sum, temp_pap, temp_rr1, temp_rr2, sum = 0, sum_cpu = 0;
 
   std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 
@@ -238,9 +238,10 @@ void verify_fpga(
     // std::cout << "FPGA" << FPGA_calc_result[j] << ", CPU"<< x[j] << std::endl;
 		if(FPGA_calc_result[j] != x[j]) {
       error = j;
-      break;
+      // break;
     }
     sum += FPGA_calc_result[j];
+    sum_cpu += x[j];
 	}
 
   if (error == N) {
@@ -249,7 +250,9 @@ void verify_fpga(
     std::cout << "ResultFPGA = " << sum << std::endl;
   } else {
     std::cout << "Error! FPGA Verification failed..." << error << std::endl;
-  }
+    std::cout << "ResultFPGA = " << sum << std::endl;
+    std::cout << "ResultCPU  = " << sum_cpu << std::endl;
+   }
   std::cout << "CG CPU elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count() << " usec" << std::endl;
 }
 
@@ -337,13 +340,16 @@ int main(int argc, char *argv[])
   posix_memalign((void **)&ROW_PTR, 64, (N+1) * sizeof(int));
   posix_memalign((void **)&B, 64, N * sizeof(float));
 
-  memcpy(VAL, A->values, VAL_SIZE * sizeof (float));
-  memcpy(COL_IND, A->colidx, VAL_SIZE * sizeof (float));
-  memcpy(ROW_PTR, A->rowptr, (N+1) * sizeof (float));
-	// for (int i = 0; i < VAL_SIZE; ++i)
-	// {
-	// 	COL_IND[i] = A->colidx[i];
-	// }
+  double *VAL_temp;
+  posix_memalign((void **)&VAL_temp, 64, VAL_SIZE * sizeof(double));
+   
+  memcpy(VAL_temp, A->values, VAL_SIZE * sizeof (double));
+  memcpy(COL_IND, A->colidx, VAL_SIZE * sizeof (int));
+  memcpy(ROW_PTR, A->rowptr, (N+1) * sizeof (int));
+  for (int i = 0; i < VAL_SIZE; ++i)
+  {
+        VAL[i] = (float)VAL_temp[i];
+  }
 
 	// device memory settings
 	///////////////////////////////////////////
