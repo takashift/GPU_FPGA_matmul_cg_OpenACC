@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
 		// ROW_PTR[j] = A->rowptr[j];
 		B[j] = h_vec_b[j] - VAL[j] * 1; //000000.0; // b - Ax
 	}
-	ROW_PTR[N] = N;
+	// ROW_PTR[N] = N;
 
 	std::chrono::system_clock::time_point start_fpga = std::chrono::system_clock::now();
 
