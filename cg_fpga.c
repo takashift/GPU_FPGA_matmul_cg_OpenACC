@@ -42,7 +42,7 @@ void funcFPGA(
 		VAL_local[i] = VAL[i];
 	}
 
-#pragma acc loop seq
+#pragma acc loop
 	for(int i = 0; i < K; ++i){
 		temp_pap = 0.0f;
 		int j = 0, l = ROW_PTR_local[0];
