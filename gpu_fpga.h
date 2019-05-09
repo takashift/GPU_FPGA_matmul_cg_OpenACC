@@ -3,11 +3,11 @@
 
 void funcFPGA(
     float* X_result,
-    float* VAL,
-    int* COL_IND,
-    int* ROW_PTR,
-    float* B,
-    int N,
-    int K,
-    int VAL_SIZE
+    const float* VAL,
+    const int* COL_IND,
+    const int* ROW_PTR,
+    const float* B,
+    const int N,
+    const int K,
+    const int VAL_SIZE
 );
