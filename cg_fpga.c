@@ -16,7 +16,7 @@ void funcFPGA(
     const int VAL_SIZE
     )
 {
-#pragma acc data copyin(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N], B[0:N], N, K, VAL_SIZE) copyout(X_result[0:N])
+#pragma acc data copyin(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) copyout(X_result[0:N])
 #pragma acc parallel num_gangs(1) num_workers(1) vector_length(1)
 {
 	// デバイスでローカル化したい変数は並列化ブロックの中で宣言すると勝手にOpenARCでローカル化する
@@ -42,7 +42,7 @@ void funcFPGA(
 		VAL_local[i] = VAL[i];
 	}
 
-#pragma acc loop independent
+#pragma acc loop seq
 	for(int i = 0; i < K; ++i){
 		temp_pap = 0.0f;
 		int j = 0, l = ROW_PTR_local[0];
