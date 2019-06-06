@@ -20,6 +20,7 @@ void funcFPGA(
 #pragma acc parallel num_gangs(1) num_workers(1) vector_length(1)
 {
 	// デバイスでローカル化したい変数は並列化ブロックの中で宣言すると勝手にOpenARCでローカル化する
+	// Variables that we want to localize in the device are localized by OpenARC if we declare them in the parallelization block.
 	float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE], alfa, beta;
 	float VAL_local[V_SIZE];
 	int COL_IND_local[V_SIZE], ROW_PTR_local[BLOCK_SIZE + 1];
