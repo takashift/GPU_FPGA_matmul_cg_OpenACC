@@ -1,4 +1,5 @@
-include ../../../../make.header
+#include ../../../../make.header
+include ${openarc}/make.header
 
 ########################
 # Set the program name #
@@ -72,4 +73,5 @@ CLIBS2 = -L/home/tsunashima/bebop/sparse_matrix_converter -L/home/tsunashima/beb
 ################################################
 #TARGET ?= ./bin
 
-include ../../../../make.template
+#include ../../../../make.template
+include ${openarc}/make.template

@@ -1,5 +1,6 @@
 // extern int workers, gangs, size;
 // extern float *A, *B, *D, *E;
+#include "openacc.h"
 
 void funcFPGA(
     float* X_result,

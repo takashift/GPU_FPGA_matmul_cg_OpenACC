@@ -5,6 +5,64 @@
 #define BLOCK_SIZE 38000
 #define V_SIZE 200000
 
+void initFPGA(
+    float* restrict X_result,
+    const float* restrict VAL,
+    const int* restrict COL_IND,
+    const int* restrict ROW_PTR,
+    const float* restrict B,
+    const int N,
+    const int K,
+    const int VAL_SIZE
+    )
+{
+	acc_init(acc_device_altera);
+	#pragma acc enter data create(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) create(X_result[0:N])
+}
+
+void shutdownFPGA(
+    float* restrict X_result,
+    const float* restrict VAL,
+    const int* restrict COL_IND,
+    const int* restrict ROW_PTR,
+    const float* restrict B,
+    const int N,
+    const int K,
+    const int VAL_SIZE
+    )
+{
+	acc_shutdown(acc_device_altera);
+	#pragma acc exit data delete(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) delete(X_result[0:N])
+}
+
+void sendDataToFPGA(
+    float* restrict X_result,
+    const float* restrict VAL,
+    const int* restrict COL_IND,
+    const int* restrict ROW_PTR,
+    const float* restrict B,
+    const int N,
+    const int K,
+    const int VAL_SIZE
+    )
+{
+	#pragma acc update device(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE)
+}
+
+void recvDataFromFPGA(
+    float* restrict X_result,
+    const float* restrict VAL,
+    const int* restrict COL_IND,
+    const int* restrict ROW_PTR,
+    const float* restrict B,
+    const int N,
+    const int K,
+    const int VAL_SIZE
+    )
+{
+	#pragma acc update host(X_result[0:N])
+}
+
 void funcFPGA(
     float* restrict X_result,
     const float* restrict VAL,
@@ -16,7 +74,6 @@ void funcFPGA(
     const int VAL_SIZE
     )
 {
-#pragma acc data copyin(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) copyout(X_result[0:N])
 #pragma acc parallel num_gangs(1) num_workers(1) vector_length(1)
 {
 	// デバイスでローカル化したい変数は並列化ブロックの中で宣言すると勝手にOpenARCでローカル化する
@@ -27,7 +84,7 @@ void funcFPGA(
 	float temp_sum=0.0f, temp_pap, temp_rr1, temp_rr2;
 
 	temp_rr1 = 0.0f;
-#pragma acc loop independent
+#pragma acc loop independent reduction(+:temp_rr1)
 	for(int i = 0; i < N; ++i){
 		ROW_PTR_local[i] = ROW_PTR[i];
 		x[i] = 0.0f;

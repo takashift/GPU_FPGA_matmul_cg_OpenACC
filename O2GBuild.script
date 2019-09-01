@@ -10,8 +10,13 @@ else
         verLevel=0
 fi
 
-openarcrt="../../../../openarcrt"
-openarclib="../../../../lib"
+if [ "$openarc" == "" ] || [ ! -d "${openarc}" ]; then
+    echo "Environment variable, openarc, should be set to use this script; exit"
+    exit
+fi
+
+openarcrt="${openarc}/openarcrt"
+openarclib="${openarc}/lib"
 
 if [ ! -f "openarcConf.txt" ]; then
     cp "openarcConf_NORMAL.txt" "openarcConf.txt"
