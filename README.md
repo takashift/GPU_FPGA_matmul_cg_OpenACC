@@ -3,6 +3,8 @@ PGI Compiler と OpenARC を組み合わせて、OpenACC のプログラム同�
 
 GPUで行列積とベクトル化、FPGAでCG法の計算を行う。
 
+OmniCompiler に実装予定の OpenACC to OpenACC の ソース to ソース コンパイラの出力を想定して記述。
+
 HPC169で発表。
 
 # 実行手順
