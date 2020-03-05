@@ -5,63 +5,57 @@
 #define BLOCK_SIZE 38000
 #define V_SIZE 200000
 
-void initFPGA(
-    float* restrict X_result,
-    const float* restrict VAL,
-    const int* restrict COL_IND,
-    const int* restrict ROW_PTR,
-    const float* restrict B,
-    const int N,
-    const int K,
-    const int VAL_SIZE
-    )
-{
-	acc_init(acc_device_altera);
-	#pragma acc enter data create(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) create(X_result[0:N])
-}
+// void initFPGA(
+//     float* restrict X_result,
+//     const float* restrict VAL,
+//     const int* restrict COL_IND,
+//     const int* restrict ROW_PTR,
+//     const float* restrict B,
+//     const int N,
+//     const int K,
+//     const int VAL_SIZE
+//     )
+// {
+// }
 
-void shutdownFPGA(
-    float* restrict X_result,
-    const float* restrict VAL,
-    const int* restrict COL_IND,
-    const int* restrict ROW_PTR,
-    const float* restrict B,
-    const int N,
-    const int K,
-    const int VAL_SIZE
-    )
-{
-	acc_shutdown(acc_device_altera);
-	#pragma acc exit data delete(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) delete(X_result[0:N])
-}
+// void shutdownFPGA(
+//     float* restrict X_result,
+//     const float* restrict VAL,
+//     const int* restrict COL_IND,
+//     const int* restrict ROW_PTR,
+//     const float* restrict B,
+//     const int N,
+//     const int K,
+//     const int VAL_SIZE
+//     )
+// {
+// }
 
-void sendDataToFPGA(
-    float* restrict X_result,
-    const float* restrict VAL,
-    const int* restrict COL_IND,
-    const int* restrict ROW_PTR,
-    const float* restrict B,
-    const int N,
-    const int K,
-    const int VAL_SIZE
-    )
-{
-	#pragma acc update device(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE)
-}
+// void sendDataToFPGA(
+//     float* restrict X_result,
+//     const float* restrict VAL,
+//     const int* restrict COL_IND,
+//     const int* restrict ROW_PTR,
+//     const float* restrict B,
+//     const int N,
+//     const int K,
+//     const int VAL_SIZE
+//     )
+// {
+// }
 
-void recvDataFromFPGA(
-    float* restrict X_result,
-    const float* restrict VAL,
-    const int* restrict COL_IND,
-    const int* restrict ROW_PTR,
-    const float* restrict B,
-    const int N,
-    const int K,
-    const int VAL_SIZE
-    )
-{
-	#pragma acc update host(X_result[0:N])
-}
+// void recvDataFromFPGA(
+//     float* restrict X_result,
+//     const float* restrict VAL,
+//     const int* restrict COL_IND,
+//     const int* restrict ROW_PTR,
+//     const float* restrict B,
+//     const int N,
+//     const int K,
+//     const int VAL_SIZE
+//     )
+// {
+// }
 
 void funcFPGA(
     float* restrict X_result,
@@ -71,9 +65,17 @@ void funcFPGA(
     const float* restrict B,
     const int N,
     const int K,
-    const int VAL_SIZE
+    const int VAL_SIZE,
+
     )
 {
+
+	acc_init(acc_device_altera);
+	#pragma acc enter data create(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) create(X_result[0:N])
+
+
+	#pragma acc update device(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE)
+
 #pragma acc parallel num_gangs(1) num_workers(1) vector_length(1)
 {
 	// デバイスでローカル化したい変数は並列化ブロックの中で宣言すると勝手にOpenARCでローカル化する
@@ -141,4 +143,10 @@ void funcFPGA(
 		X_result[j] = x[j];
 	}
 }
+
+	#pragma acc update host(X_result[0:N])
+
+
+	acc_shutdown(acc_device_altera);
+	#pragma acc exit data delete(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) delete(X_result[0:N])
 }
