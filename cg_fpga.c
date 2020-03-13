@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "gpu_fpga.h"
+#include <openacc.h> 
 
 #define BLOCK_SIZE 38000
 #define V_SIZE 200000
@@ -71,10 +72,10 @@ void funcFPGA(
 {
 
 	acc_init(acc_device_altera);
-	#pragma acc enter data create(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) create(X_result[0:N])
+	#pragma acc enter data copyin(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) create(X_result[0:N])
 
 
-	#pragma acc update device(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE)
+	// #pragma acc update device(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE)
 
 #pragma acc parallel num_gangs(1) num_workers(1) vector_length(1)
 {
@@ -144,9 +145,9 @@ void funcFPGA(
 	}
 }
 
-	#pragma acc update host(X_result[0:N])
+	// #pragma acc update host(X_result[0:N])
 
 
 	acc_shutdown(acc_device_altera);
-	#pragma acc exit data delete(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) delete(X_result[0:N])
+	#pragma acc exit data delete(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) copyout(X_result[0:N])
 }
