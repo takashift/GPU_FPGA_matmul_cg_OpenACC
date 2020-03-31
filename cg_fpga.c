@@ -8,13 +8,13 @@
 
 void initFPGA(
     float* restrict X_result,
-    const float* restrict VAL,
-    const int* restrict COL_IND,
-    const int* restrict ROW_PTR,
-    const float* restrict B,
-    const int N,
-    const int K,
-    const int VAL_SIZE
+    float* restrict VAL,
+    int* restrict COL_IND,
+    int* restrict ROW_PTR,
+    float* restrict B,
+    int N,
+    int K,
+    int VAL_SIZE
     )
 {
 	acc_init(acc_device_altera);
@@ -23,13 +23,13 @@ void initFPGA(
 
 void shutdownFPGA(
     float* restrict X_result,
-    const float* restrict VAL,
-    const int* restrict COL_IND,
-    const int* restrict ROW_PTR,
-    const float* restrict B,
-    const int N,
-    const int K,
-    const int VAL_SIZE
+    float* restrict VAL,
+    int* restrict COL_IND,
+    int* restrict ROW_PTR,
+    float* restrict B,
+    int N,
+    int K,
+    int VAL_SIZE
     )
 {
 	acc_shutdown(acc_device_altera);
@@ -38,13 +38,13 @@ void shutdownFPGA(
 
 // void sendDataToFPGA(
 //     float* restrict X_result,
-//     const float* restrict VAL,
-//     const int* restrict COL_IND,
-//     const int* restrict ROW_PTR,
-//     const float* restrict B,
-//     const int N,
-//     const int K,
-//     const int VAL_SIZE
+//     float* restrict VAL,
+//     int* restrict COL_IND,
+//     int* restrict ROW_PTR,
+//     float* restrict B,
+//     int N,
+//     int K,
+//     int VAL_SIZE
 //     )
 // {
 // 	#pragma acc update device(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE)
@@ -52,13 +52,13 @@ void shutdownFPGA(
 
 // void recvDataFromFPGA(
 //     float* restrict X_result,
-//     const float* restrict VAL,
-//     const int* restrict COL_IND,
-//     const int* restrict ROW_PTR,
-//     const float* restrict B,
-//     const int N,
-//     const int K,
-//     const int VAL_SIZE
+//     float* restrict VAL,
+//     int* restrict COL_IND,
+//     int* restrict ROW_PTR,
+//     float* restrict B,
+//     int N,
+//     int K,
+//     int VAL_SIZE
 //     )
 // {
 // 	#pragma acc update host(X_result[0:N])
@@ -66,13 +66,13 @@ void shutdownFPGA(
 
 void funcFPGA(
     float* restrict X_result,
-    const float* restrict VAL,
-    const int* restrict COL_IND,
-    const int* restrict ROW_PTR,
-    const float* restrict B,
-    const int N,
-    const int K,
-    const int VAL_SIZE,
+    float* restrict VAL,
+    int* restrict COL_IND,
+    int* restrict ROW_PTR,
+    float* restrict B,
+    int N,
+    int K,
+    int VAL_SIZE,
     )
 {
 
