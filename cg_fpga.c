@@ -6,31 +6,35 @@
 #define BLOCK_SIZE 38000
 #define V_SIZE 200000
 
-// void initFPGA(
-//     float* restrict X_result,
-//     const float* restrict VAL,
-//     const int* restrict COL_IND,
-//     const int* restrict ROW_PTR,
-//     const float* restrict B,
-//     const int N,
-//     const int K,
-//     const int VAL_SIZE
-//     )
-// {
-// }
+void initFPGA(
+    float* restrict X_result,
+    const float* restrict VAL,
+    const int* restrict COL_IND,
+    const int* restrict ROW_PTR,
+    const float* restrict B,
+    const int N,
+    const int K,
+    const int VAL_SIZE
+    )
+{
+	acc_init(acc_device_altera);
+	#pragma acc enter data copyin(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) create(X_result[0:N])
+}
 
-// void shutdownFPGA(
-//     float* restrict X_result,
-//     const float* restrict VAL,
-//     const int* restrict COL_IND,
-//     const int* restrict ROW_PTR,
-//     const float* restrict B,
-//     const int N,
-//     const int K,
-//     const int VAL_SIZE
-//     )
-// {
-// }
+void shutdownFPGA(
+    float* restrict X_result,
+    const float* restrict VAL,
+    const int* restrict COL_IND,
+    const int* restrict ROW_PTR,
+    const float* restrict B,
+    const int N,
+    const int K,
+    const int VAL_SIZE
+    )
+{
+	acc_shutdown(acc_device_altera);
+	#pragma acc exit data delete(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) copyout(X_result[0:N])
+}
 
 // void sendDataToFPGA(
 //     float* restrict X_result,
@@ -43,6 +47,7 @@
 //     const int VAL_SIZE
 //     )
 // {
+// 	#pragma acc update device(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE)
 // }
 
 // void recvDataFromFPGA(
@@ -56,6 +61,7 @@
 //     const int VAL_SIZE
 //     )
 // {
+// 	#pragma acc update host(X_result[0:N])
 // }
 
 void funcFPGA(
@@ -67,15 +73,8 @@ void funcFPGA(
     const int N,
     const int K,
     const int VAL_SIZE,
-
     )
 {
-
-	acc_init(acc_device_altera);
-	#pragma acc enter data copyin(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) create(X_result[0:N])
-
-
-	// #pragma acc update device(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE)
 
 #pragma acc parallel num_gangs(1) num_workers(1) vector_length(1) present(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE, X_result[0:N])
 {
@@ -143,9 +142,4 @@ void funcFPGA(
 	}
 }
 
-	// #pragma acc update host(X_result[0:N])
-
-
-	acc_shutdown(acc_device_altera);
-	#pragma acc exit data delete(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) copyout(X_result[0:N])
 }
