@@ -12,3 +12,25 @@ void funcFPGA(
     int K,
     int VAL_SIZE
 );
+
+void initFPGA(
+    float* restrict X_result,
+    float* restrict VAL,
+    int* restrict COL_IND,
+    int* restrict ROW_PTR,
+    float* restrict B,
+    int N,
+    int K,
+    int VAL_SIZE
+);
+
+void shutdownFPGA(
+    float* restrict X_result,
+    float* restrict VAL,
+    int* restrict COL_IND,
+    int* restrict ROW_PTR,
+    float* restrict B,
+    int N,
+    int K,
+    int VAL_SIZE
+);
