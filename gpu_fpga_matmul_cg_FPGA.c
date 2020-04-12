@@ -80,8 +80,8 @@ void funcFPGA(
 #pragma acc enter data create(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) create(X_result[0:N])
 
 
-#pragma acc parallel num_gangs(1) num_workers(1) vector_length(1)
 #pragma acc data present(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE, X_result[0:N])
+#pragma acc parallel num_gangs(1) num_workers(1) vector_length(1)
 {
 	float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE], alfa, beta;
 	float VAL_local[V_SIZE];
