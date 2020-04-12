@@ -72,7 +72,7 @@ void funcFPGA(
     float* restrict B,
     int N,
     int K,
-    int VAL_SIZE,
+    int VAL_SIZE
     )
 {
 
