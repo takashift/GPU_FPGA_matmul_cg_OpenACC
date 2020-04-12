@@ -9,7 +9,7 @@ BENCHMARK = gpu_fpga_matmul_cg
 ########################################
 # Set the input C source files (CSRCS) #
 ########################################
-CSRCS = gpu_fpga_matmul_cg_FPGA.c
+CSRCS = cg_fpga.c
 
 #########################################
 # Set macros used for the input program #
@@ -48,8 +48,8 @@ CSRCS = gpu_fpga_matmul_cg_FPGA.c
 ##########################################################
 OMP ?= 0
 MODE ?= normal
-AOCL_BOARD ?= p520_max_sg280h
-#AOCL_BOARD ?= a10pl4_dd4gb_gx115_m512
+#AOCL_BOARD ?= p520_max_sg280h
+AOCL_BOARD ?= a10pl4_dd4gb_gx115_m512
 #AOCL_FLAGS ?= -march=emulator
 #AOCL_FLAGS ?= -march=emulator -c
 #AOCL_FLAGS ?= -v -g -c -report

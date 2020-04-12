@@ -374,9 +374,9 @@ int main(int argc, char *argv[])
 	}
 	// ROW_PTR[N] = N;
 
-	// initFPGA(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
+	initFPGA(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
 
-	// std::chrono::system_clock::time_point start_fpga = std::chrono::system_clock::now();
+	std::chrono::system_clock::time_point start_fpga = std::chrono::system_clock::now();
 
 	// sendDataToFPGA(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
 
@@ -384,15 +384,15 @@ int main(int argc, char *argv[])
 
 	// recvDataFromFPGA(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
 	
-	// std::chrono::system_clock::time_point end_fpga = std::chrono::system_clock::now();
+	std::chrono::system_clock::time_point end_fpga = std::chrono::system_clock::now();
 
-	// shutdownFPGA(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
+	shutdownFPGA(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
 
 	std::cout << "GPU  elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end_gpu-start_gpu).count() << " usec" << std::endl;
 	std::cout << std::string(30, '-') << std::endl;
 
-	// std::cout << "FPGA elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end_fpga-start_fpga).count() << " usec" << std::endl;
-	// std::cout << std::string(30, '-') << std::endl;
+	std::cout << "FPGA elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end_fpga-start_fpga).count() << " usec" << std::endl;
+	std::cout << std::string(30, '-') << std::endl;
 
 	// verification
 	///////////////////////////////////////////
