@@ -12,14 +12,15 @@ extern "C"{
 }
 #include "gpu_fpga.h"
 
-void matmul(float *a, float *b, float *c, int N)
+std::chrono::system_clock::time_point matmul(float *a, float *b, float *c, int N, float *e, float *f)
 {
 	int i, j, k;
+#pragma acc enter data create(N, a[:N*N], b[:N*N], c[:N*N], e[:N], f[:N])
+	std::chrono::system_clock::time_point start_gpu = std::chrono::system_clock::now();
 
-// <<<dim3(numblock, numblock), dim3(numthread, numthread)>>>
-#pragma acc update device(a[:N*N], b[:N*N])
+#pragma acc update device(N, a[:N*N], b[:N*N])
 
-#pragma acc kernels present(c, a, b)
+#pragma acc kernels present(N, c, a, b)
 	{
 #pragma acc loop gang(N/32) vector(32) independent
 		for (i = 0; i < N; ++i)
@@ -36,17 +37,10 @@ void matmul(float *a, float *b, float *c, int N)
 		}
 	}
 
-#pragma acc update self(c[:N*N])
-}
+//matrix_vector_malti
+#pragma acc update device(e[:N])
 
-void matrix_vector_malti(float *a, float *b, float *c, int N)
-{
-	int i, j;
-
-// <<<dim3(numblock), dim3(numthread)>>>
-#pragma acc update device(a[:N*N], b[:N])
-
-#pragma acc kernels present(c, a, b)
+#pragma acc kernels present(N, f, c, e)
 	{
 #pragma acc loop independent gang(N/32) vector(32)
 		for (i = 0; i < N; ++i)
@@ -54,13 +48,38 @@ void matrix_vector_malti(float *a, float *b, float *c, int N)
 			float sum = 0.0;
 #pragma acc loop reduction(+:sum)
 			for (j = 0; j < N; ++j)
-				sum += a[i * N + j] * b[j];
-			c[i] = sum;
+				sum += c[i * N + j] * e[j];
+			f[i] = sum;
 		}
 	}
 
-#pragma acc update self(c[:N])
+#pragma acc update self(f[:N])
+
+return start_gpu;
 }
+
+// void matrix_vector_malti(float *a, float *b, float *c, int N)
+// {
+// 	int i, j;
+
+// // <<<dim3(numblock), dim3(numthread)>>>
+// #pragma acc update device(a[:N*N], b[:N])
+
+// #pragma acc kernels present(c, a, b)
+// 	{
+// #pragma acc loop independent gang(N/32) vector(32)
+// 		for (i = 0; i < N; ++i)
+// 		{
+// 			float sum = 0.0;
+// #pragma acc loop reduction(+:sum)
+// 			for (j = 0; j < N; ++j)
+// 				sum += a[i * N + j] * b[j];
+// 			c[i] = sum;
+// 		}
+// 	}
+
+// #pragma acc update self(c[:N])
+// }
 
 void MatrixMultiplication_openmp(float *a, float *b, float *c, int N)
 {
@@ -363,19 +382,16 @@ int main(int argc, char *argv[])
 	// main routine
 	///////////////////////////////////////////
 
-#pragma acc enter data create(h_a[:N*N], h_b[:N*N], h_c[:N*N])
-#pragma acc enter data create(h_vec_mul[:N], h_vec_b[:N])
 
 	/***** GPU *****/
-	std::chrono::system_clock::time_point start_gpu = std::chrono::system_clock::now();
 
-	matmul(h_a, h_b, h_c, numdata_h);
-	matrix_vector_malti(h_c, h_vec_mul, h_vec_b, numdata_h);
+	std::chrono::system_clock::time_point start_gpu = matmul(h_a, h_b, h_c, numdata_h, h_vec_mul, h_vec_b);
+	// matrix_vector_malti(h_c, h_vec_mul, h_vec_b, numdata_h);
 
 	std::chrono::system_clock::time_point end_gpu = std::chrono::system_clock::now();
 
-#pragma acc exit data delete(h_a, h_b, h_c)
-#pragma acc exit data delete(h_vec_mul, h_vec_b)
+// #pragma acc exit data delete(h_a, h_b, h_c)
+// #pragma acc exit data delete(h_vec_mul, h_vec_b)
 
 	/***** FPGA *****/
 	for (int j = 0; j < N; ++j)
