@@ -16,20 +16,24 @@ std::chrono::system_clock::time_point matmul(float *a, float *b, float *c, int N
 {
 	int i, j, k;
 #pragma acc enter data create(N, a[:N*N], b[:N*N], c[:N*N], e[:N], f[:N])
-	std::chrono::system_clock::time_point start_gpu = std::chrono::system_clock::now();
+	std::chrono::system_clock::time_point start_gpu;
 
-#pragma acc update device(N, a[:N*N], b[:N*N])
+#pragma acc data present(N, c, a, b, f, e)
+{
+start_gpu = std::chrono::system_clock::now();
 
-#pragma acc kernels present(N, c, a, b)
+#pragma acc update device(N, a[:N*N], b[:N*N], e[:N])
+
+#pragma acc kernels
 	{
-#pragma acc loop gang(N/32) vector(32) independent
+#pragma acc loop gang vector(32) independent
 		for (i = 0; i < N; ++i)
 		{
-#pragma acc loop gang(N/32) vector(32) independent
+#pragma acc loop gang vector(32) independent
 			for (j = 0; j < N; ++j)
 			{
 				float sum = 0.0;
-#pragma acc loop reduction(+:sum)
+#pragma acc loop independent reduction(+:sum)
 				for (k = 0; k < N; ++k)
 					sum += a[i * N + k] * b[k * N + j];
 				c[i * N + j] = sum;
@@ -38,15 +42,14 @@ std::chrono::system_clock::time_point matmul(float *a, float *b, float *c, int N
 	}
 
 //matrix_vector_malti
-#pragma acc update device(e[:N])
 
-#pragma acc kernels present(N, f, c, e)
+#pragma acc kernels
 	{
-#pragma acc loop independent gang(N/32) vector(32)
+#pragma acc loop gang vector independent
 		for (i = 0; i < N; ++i)
 		{
 			float sum = 0.0;
-#pragma acc loop reduction(+:sum)
+#pragma acc loop independent reduction(+:sum)
 			for (j = 0; j < N; ++j)
 				sum += c[i * N + j] * e[j];
 			f[i] = sum;
@@ -54,6 +57,7 @@ std::chrono::system_clock::time_point matmul(float *a, float *b, float *c, int N
 	}
 
 #pragma acc update self(f[:N])
+}
 
 return start_gpu;
 }
