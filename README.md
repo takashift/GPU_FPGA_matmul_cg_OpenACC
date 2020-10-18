@@ -5,4 +5,4 @@ GPU and FPGA cooperative computing in a single computing process with MHOAT and 
 - Calculation on GPU:  matrix-matrix multiplication and matrix-vector multiprication
 - Calculation on FPGA: Conjugate Gradient solver with GPU’s result vector
 
-Presented at HLPP 2020.
+CUDA+OpenCL ver.: https://github.com/takashift/cuda_opencl_matmul_cg
