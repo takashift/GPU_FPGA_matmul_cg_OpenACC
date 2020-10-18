@@ -2,6 +2,16 @@
 // extern float *A, *B, *D, *E;
 // #include "openacc.h"
 
+#ifdef __cplusplus
+extern "C"{
+#endif /* __cplusplus */
+	#include <bebop/smc/sparse_matrix.h>
+	#include <bebop/smc/sparse_matrix_ops.h>
+	#include <bebop/smc/csr_matrix.h>
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
 enum DEVICE{ GPU,
 FPGA };
 
