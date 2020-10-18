@@ -1,26 +1,129 @@
-#include <iostream>
-#include <cstdlib>
-#include <cmath>
-#include <omp.h>
-#include <chrono>
-#include <cassert>
-#include <cstring>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+// #include <iostream>
+// #include <cstdlib>
+// #include <cmath>
+// #include <omp.h>
+#include <string.h>
+// #include <chrono>
+// #include <cassert>
+// #include <cstring>
+#ifdef __cplusplus
 extern "C"{
+#endif /* __cplusplus */
 	#include <bebop/smc/sparse_matrix.h>
 	#include <bebop/smc/sparse_matrix_ops.h>
 	#include <bebop/smc/csr_matrix.h>
+#ifdef __cplusplus
 }
+#endif /* __cplusplus */
 #include "gpu_fpga.h"
+// #include <openacc.h> 
 
-std::chrono::system_clock::time_point matmul(float *a, float *b, float *c, int N, float *e, float *f)
+#define BLOCK_SIZE 38000
+#define V_SIZE 200000
+
+void funcFPGA(
+    float* restrict X_result,
+    float* restrict VAL,
+    int* restrict COL_IND,
+    int* restrict ROW_PTR,
+    float* restrict B,
+    int N,
+    int K,
+    int VAL_SIZE
+    )
+{
+#pragma accomn ondevice(FPGA)
+{
+	// acc_init(acc_device_altera);
+#pragma acc enter data create(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) create(X_result[0:N])
+
+#pragma acc data present(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE, X_result[0:N])
+{
+#pragma acc update device(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE)
+
+#pragma acc parallel num_gangs(1) num_workers(1) vector_length(1)
+{
+	float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE], alfa, beta;
+	float VAL_local[V_SIZE];
+	int COL_IND_local[V_SIZE], ROW_PTR_local[BLOCK_SIZE + 1];
+	float temp_sum=0.0f, temp_pap, temp_rr1, temp_rr2;
+
+	temp_rr1 = 0.0f;
+#pragma acc loop independent reduction(+:temp_rr1)
+	for(int i = 0; i < N; ++i){
+		ROW_PTR_local[i] = ROW_PTR[i];
+		x[i] = 0.0f;
+		r[i] = B[i];
+		p[i] = B[i];
+		temp_rr1 += r[i] * r[i];
+	}
+	ROW_PTR_local[N] = ROW_PTR[N];
+
+#pragma acc loop independent
+	for(int i = 0; i < VAL_SIZE; ++i){
+		COL_IND_local[i] = COL_IND[i];
+		VAL_local[i] = VAL[i];
+	}
+
+#pragma acc loop
+	for(int i = 0; i < K; ++i){
+		temp_pap = 0.0f;
+		for(int j = 0; j < N; ++j){
+			temp_sum = 0.0f;
+			for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; ++l){
+				temp_sum += p[COL_IND_local[l]] * VAL_local[l];
+			}
+			y[j] = temp_sum;
+			temp_pap += p[j] * temp_sum;
+		}
+
+		alfa = temp_rr1 / temp_pap;
+
+		temp_rr2 = 0.0f;
+#pragma acc loop reduction(+:temp_rr2)
+		for(int j = 0; j < N; ++j){
+			x[j] += alfa * p[j];
+			r[j] -= alfa * y[j];
+			temp_rr2 += r[j] * r[j];
+		}
+
+		beta = temp_rr2 / temp_rr1;
+
+#pragma acc loop independent
+		for(int j = 0; j < N; ++j){
+			p[j] = r[j] + beta * p[j];
+		}
+		temp_rr1 = temp_rr2;
+
+	}
+#pragma acc loop independent
+	for(int j = 0; j < N; ++j){
+		X_result[j] = x[j];
+	}
+}
+
+#pragma acc update host(X_result[0:N])
+}
+
+#pragma acc exit data delete(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) delete(X_result[0:N])
+	// acc_shutdown(acc_device_altera);
+}
+}
+
+void matmul(float *a, float *b, float *c, int N, float *e, float *f)
+{
+#pragma accomn ondevice(GPU)
 {
 	int i, j, k;
 #pragma acc enter data create(N, a[:N*N], b[:N*N], c[:N*N], e[:N], f[:N])
-	std::chrono::system_clock::time_point start_gpu;
+	// std::chrono::system_clock::time_point start_gpu;
 
 #pragma acc data present(N, c, a, b, f, e)
 {
-start_gpu = std::chrono::system_clock::now();
+// start_gpu = std::chrono::system_clock::now();
 
 #pragma acc update device(N, a[:N*N], b[:N*N], e[:N])
 
@@ -56,10 +159,11 @@ start_gpu = std::chrono::system_clock::now();
 		}
 	}
 
-#pragma acc update self(f[:N])
+#pragma acc update host(f[:N])
+}
 }
 
-return start_gpu;
+// return start_gpu;
 }
 
 // void matrix_vector_malti(float *a, float *b, float *c, int N)
@@ -199,7 +303,7 @@ void verify_fpga(
 	int COL_IND_local[VAL_SIZE], ROW_PTR_local[N + 1];
 	float temp_sum, temp_pap, temp_rr1, temp_rr2, sum = 0, sum_cpu = 0;
 
-  std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+//   std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 
 	temp_rr1 = 0.0f;
 	for(int i = 0; i < N; ++i){
@@ -245,7 +349,7 @@ void verify_fpga(
 
 	}
 
-  std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
+//   std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
 
 // if (fetestexcept(FE_INVALID)) {
 //    puts("浮動小数点例外が発生しました");
@@ -274,21 +378,21 @@ void verify_fpga(
 	}
 
   if (error == N) {
-    std::cout << std::string(30, '-') << std::endl;
-    std::cout << "FPGA Verification: PASS" << std::endl;
-    std::cout << "ResultFPGA = " << sum << std::endl;
+    // std::cout << std::string(30, '-') << std::endl;
+    // std::cout << "FPGA Verification: PASS" << std::endl;
+    // std::cout << "ResultFPGA = " << sum << std::endl;
   } else {
-    std::cout << "Error! FPGA Verification failed..." << error << std::endl;
-    std::cout << "ResultFPGA = " << sum << std::endl;
-    std::cout << "ResultCPU  = " << sum_cpu << std::endl;
+    // std::cout << "Error! FPGA Verification failed..." << error << std::endl;
+    // std::cout << "ResultFPGA = " << sum << std::endl;
+    // std::cout << "ResultCPU  = " << sum_cpu << std::endl;
    }
-  std::cout << "CG CPU elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count() << " usec" << std::endl;
+//   std::cout << "CG CPU elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count() << " usec" << std::endl;
 }
 
 int main(int argc, char *argv[])
 {
 	struct sparse_matrix_t* A_ = load_sparse_matrix(MATRIX_MARKET, "bcsstk17.mtx");
-	assert(A_ != NULL);
+	// assert(A_ != NULL);
 	int errcode = sparse_matrix_convert(A_, CSR);
 	if (errcode != 0)
 	{
@@ -300,19 +404,19 @@ int main(int argc, char *argv[])
 	}
 
   struct csr_matrix_t* A = (struct csr_matrix_t*) A_->repr;
-  assert (A);
-  assert (A->nnz == (A->rowptr[A->m] - A->rowptr[0]));
+//   assert (A);
+//   assert (A->nnz == (A->rowptr[A->m] - A->rowptr[0]));
 
 	// check command line arguments
 	///////////////////////////////////////////
 	if (argc == 1)
 	{
-		std::cout << "usage: ./host <numdata_h> <valsize> <numtry>"   << std::endl;
+		// std::cout << "usage: ./host <numdata_h> <valsize> <numtry>"   << std::endl;
 		exit(0);
 	}
 	if (argc != 4)
 	{
-		std::cerr << "Error! The number of arguments is wrong."       << std::endl;
+		// std::cerr << "Error! The number of arguments is wrong."       << std::endl;
 		exit(1);
 	}
 
@@ -320,7 +424,7 @@ int main(int argc, char *argv[])
 	int N = numdata_h;
   const int  valsize   = A->nnz;
 	int VAL_SIZE = valsize;
-	const int numtry = std::stoull(std::string(argv[3]));
+	const int numtry = 1000;
 	const unsigned long numbyte = numdata_h * numdata_h * sizeof(float); // this sample uses "float"
 
 	printf("numdata_h: %d, valsize: %d, numtry: %d\n", numdata_h, valsize, numtry);
@@ -389,10 +493,10 @@ int main(int argc, char *argv[])
 
 	/***** GPU *****/
 
-	std::chrono::system_clock::time_point start_gpu = matmul(h_a, h_b, h_c, numdata_h, h_vec_mul, h_vec_b);
+	matmul(h_a, h_b, h_c, numdata_h, h_vec_mul, h_vec_b);
 	// matrix_vector_malti(h_c, h_vec_mul, h_vec_b, numdata_h);
 
-	std::chrono::system_clock::time_point end_gpu = std::chrono::system_clock::now();
+	// std::chrono::system_clock::time_point end_gpu = std::chrono::system_clock::now();
 
 // #pragma acc exit data delete(h_a, h_b, h_c)
 // #pragma acc exit data delete(h_vec_mul, h_vec_b)
@@ -408,7 +512,7 @@ int main(int argc, char *argv[])
 
 	// initFPGA(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
 
-	std::chrono::system_clock::time_point start_fpga = std::chrono::system_clock::now();
+	// std::chrono::system_clock::time_point start_fpga = std::chrono::system_clock::now();
 
 	// sendDataToFPGA(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
 
@@ -416,15 +520,15 @@ int main(int argc, char *argv[])
 
 	// recvDataFromFPGA(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
 	
-	std::chrono::system_clock::time_point end_fpga = std::chrono::system_clock::now();
+	// std::chrono::system_clock::time_point end_fpga = std::chrono::system_clock::now();
 
 	// shutdownFPGA(FPGA_calc_result, VAL, COL_IND, ROW_PTR, B, N, K, VAL_SIZE);
 
-	std::cout << "GPU  elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end_gpu-start_gpu).count() << " usec" << std::endl;
-	std::cout << std::string(30, '-') << std::endl;
+	// std::cout << "GPU  elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end_gpu-start_gpu).count() << " usec" << std::endl;
+	// std::cout << std::string(30, '-') << std::endl;
 
-	std::cout << "FPGA elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end_fpga-start_fpga).count() << " usec" << std::endl;
-	std::cout << std::string(30, '-') << std::endl;
+	// std::cout << "FPGA elapsed time: " << std::fixed << std::chrono::duration_cast<std::chrono::microseconds>(end_fpga-start_fpga).count() << " usec" << std::endl;
+	// std::cout << std::string(30, '-') << std::endl;
 
 	// verification
 	///////////////////////////////////////////
