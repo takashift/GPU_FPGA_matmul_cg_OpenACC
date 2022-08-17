@@ -15,6 +15,8 @@ extern "C"{
 enum DEVICE{ GPU,
 FPGA };
 
+float time_diff(struct timespec *start, struct timespec *end);
+
 void funcFPGA(
     float* X_result,
     float* VAL,

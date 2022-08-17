@@ -16,11 +16,127 @@
 
 #define BLOCK_SIZE 10974 //38000
 #define V_SIZE 219812 //220000
-#define SPLIT_SIZE 3
+#define SPLIT_SIZE 2
 
 float time_diff(struct timespec *start, struct timespec *end) {
 	return end->tv_sec - start->tv_sec + (end->tv_nsec - start->tv_nsec) * 1E-9;
 }
+
+
+// void calc_CG_FPGA_slave(
+//     float* restrict X_result,
+//     float* restrict VAL,
+//     int* restrict COL_IND,
+//     int* restrict ROW_PTR,
+//     float* restrict B,
+// 	int N_init,
+//     int N,
+//     int K,
+//     int VAL_SIZE
+// )
+// {
+// float pipe_temp_rr1_split1[1];
+// float pipe_temp_rr1_result1[1];
+// float pipe_temp_pap_split1[1];
+// float pipe_temp_pap_result1[1];
+// float pipe_temp_rr2_split1[1];
+// float pipe_temp_rr2_result1[1];
+// float pipe_p1[BLOCK_SIZE];
+// float pipe_p2[BLOCK_SIZE];
+
+// #pragma accomn target_dev(FPGA)
+// #pragma acc serial async(1) //pipein(pipe_temp_rr1_split1) pipeout(pipe_temp_rr1_result1)
+// {
+// 	// pはBLOCK_SIZEのまま、VAL_localとCOL_IND_localも多分行ごとに数が異なるからそのまま
+// 	float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE], alfa, beta;
+// 	float VAL_local[V_SIZE];
+// 	int COL_IND_local[V_SIZE], ROW_PTR_local[(BLOCK_SIZE + 1)];
+// 	float temp_sum=0.0f, temp_pap, temp_rr1, temp_rr2;
+
+// 	temp_rr1 = 0.0f;
+// #pragma acc loop independent //reduction(+:temp_rr1)
+// 	for(int i = N_init; i < N; ++i){
+// 		ROW_PTR_local[i] = ROW_PTR[i];
+// 		x[i] = 0.0f;
+// 		r[i] = B[i];
+// 		p[i] = B[i];
+// 		temp_rr1 += r[i] * r[i];
+// 	}
+// // チャネル必要(temp_rr1送信)
+// pipe_temp_rr1_split1[0] = temp_rr1;
+// // チャネル必要(合計を受信)
+// temp_rr1 = pipe_temp_rr1_result1[0];
+
+// 	ROW_PTR_local[N] = ROW_PTR[N];
+
+// #pragma acc loop independent
+// 	for(int i = N_init; i < VAL_SIZE; ++i){
+// 		COL_IND_local[i] = COL_IND[i];
+// 		VAL_local[i] = VAL[i];
+// 	}
+
+// 	for(int i = N_init; i < K; ++i){
+// 		temp_pap = 0.0f;
+// #pragma acc loop reduction(+:temp_sum)
+// 		for(int j = N_init; j < N; ++j){
+// 			temp_sum = 0.0f;
+// 			for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; ++l){
+// 				temp_sum += VAL_local[l] * p[COL_IND_local[l]];
+// 			}
+// 			y[j] = temp_sum;
+// 			temp_pap += p[j] * temp_sum;
+// 		}
+
+// //#pragma acc loop //reduction(+:temp_pap)
+// //		for(int j = N_init; j < N; ++j){
+// //			temp_pap += p[j] * y[j];
+// //		}
+// // チャネル必要(temp_pap送信)
+// pipe_temp_pap_split1[0] = temp_pap;
+// // チャネル必要(合計を受信)
+// temp_pap = pipe_temp_pap_result1[0];
+
+// // 片方だけで計算しようかと思ったけど、パイプのほうが重そうなので全カーネルで計算
+// 		alfa = temp_rr1 / temp_pap;
+
+// 		temp_rr2 = 0.0f;
+// #pragma acc loop //reduction(+:temp_rr2)
+// 		for(int j = N_init; j < N; ++j){
+// 			x[j] += alfa * p[j];
+// 			r[j] -= alfa * y[j];
+// 			temp_rr2 += r[j] * r[j];
+// 		}
+// // チャネル必要(temp_rr2送信)
+// pipe_temp_rr2_split1[0] = temp_rr2;
+// // チャネル必要(合計を受信)
+// temp_rr2 = pipe_temp_rr2_result1[0];
+
+// // 片方だけで計算しようかと思ったけど、パイプのほうが重そうなので全カーネルで計算
+// 		beta = temp_rr2 / temp_rr1;
+
+// #pragma acc loop independent
+// 		for(int j = N_init; j < N; ++j){
+// 			p[j] = r[j] + beta * p[j];
+// 		}
+// // チャネル必要（各カーネルで担当外の要素の更新が必要）
+// for(int j = N; j < BLOCK_SIZE; ++j){
+// 	pipe_p2[j] = p[j];
+// }
+// // チャネル必要（各カーネルで担当外の要素の更新が必要）
+// for(int j = 0; j < N_init; ++j){
+// 	p[j] = pipe_p1[j];
+// }
+
+// 		temp_rr1 = temp_rr2;
+// 	}
+
+// #pragma acc loop independent
+// 	for(int j = N_init; j < N; ++j){
+// 		X_result[j] = x[j];
+// 	}
+// }
+// #pragma acc wait(1)
+// }
 
 
 void funcFPGA(
@@ -37,12 +153,11 @@ void funcFPGA(
 #pragma accomn target_dev(FPGA)
 // ここに波括弧があるとacc_init()がエラーになる
 
-// acc_init(acc_device_altera_emulator);
+acc_init(acc_device_altera_emulator);
 
-int N_init1 = N/SPLIT_SIZE;
-int N_init2 = 2*N/SPLIT_SIZE;
+int N_init = N/SPLIT_SIZE;
 
-#pragma acc enter data create(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N_init1, N_init2, N, K, VAL_SIZE) create(X_result[0:N])
+#pragma acc enter data create(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N_init, N, K, VAL_SIZE) create(X_result[0:N])
 
 struct timespec fpga_copyin_start;
 struct timespec fpga_copyin_end;
@@ -50,46 +165,32 @@ struct timespec fpga_calc_start;
 struct timespec fpga_calc_end;
 struct timespec fpga_copyout_start;
 struct timespec fpga_copyout_end;
-float pipe_temp_pap_from0to1[1];
-float pipe_temp_pap_from0to2[1];
-float pipe_temp_pap_from1to0[1];
-float pipe_temp_pap_from1to2[1];
-float pipe_temp_pap_from2to0[1];
-float pipe_temp_pap_from2to1[1];
-
-float pipe_temp_rr2_from0to1[1];
-float pipe_temp_rr2_from0to2[1];
-float pipe_temp_rr2_from1to0[1];
-float pipe_temp_rr2_from1to2[1];
-float pipe_temp_rr2_from2to0[1];
-float pipe_temp_rr2_from2to1[1];
-
-float pipe_p_from0to1[1];
-float pipe_p_from0to2[1];
-float pipe_p_from1to0[1];
-float pipe_p_from1to2[1];
-float pipe_p_from2to0[1];
-float pipe_p_from2to1[1];
+float pipe_temp_pap_from0[1];
+float pipe_temp_pap_from1[1];
+float pipe_temp_rr2_from0[1];
+float pipe_temp_rr2_from1[1];
+float pipe_p_from0[1];
+float pipe_p_from1[1];
 
 clock_gettime(CLOCK_REALTIME, &fpga_copyin_start);
-#pragma acc update device(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N_init1, N_init2, N, K, VAL_SIZE)
+#pragma acc update device(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N_init, N, K, VAL_SIZE)
 clock_gettime(CLOCK_REALTIME, &fpga_copyin_end);
 printf("Host to FPGA time: %lf sec\n", time_diff(&fpga_copyin_start, &fpga_copyin_end));
 
 
-#pragma acc data present(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N_init1, N_init2, N, K, VAL_SIZE, X_result[0:N]) pipe(pipe_temp_pap_from0to1, pipe_temp_pap_from0to2, pipe_temp_rr2_from0to1, pipe_temp_rr2_from0to2, pipe_p_from0to1, pipe_p_from0to2, pipe_temp_pap_from1to0, pipe_temp_pap_from1to2, pipe_temp_rr2_from1to0, pipe_temp_rr2_from1to2, pipe_p_from1to0, pipe_p_from1to2, pipe_temp_pap_from2to0, pipe_temp_pap_from2to1, pipe_temp_rr2_from2to0, pipe_temp_rr2_from2to1, pipe_p_from2to0, pipe_p_from2to1)
+#pragma acc data present(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N_init, N, K, VAL_SIZE, X_result[0:N]) pipe(pipe_temp_pap_from0, pipe_temp_rr2_from0, pipe_p_from0, pipe_temp_pap_from1, pipe_temp_rr2_from1, pipe_p_from1)
 {
 clock_gettime(CLOCK_REALTIME, &fpga_calc_start);
 
 
-
-// calc_CG_FPGA_slave(X_result, VAL, COL_IND, ROW_PTR, B, N/SPLIT_SIZE, N, K, VAL_SIZE);
-#pragma acc serial async(0) pipein(pipe_temp_pap_from1to0, pipe_temp_rr2_from1to0, pipe_p_from1to0, pipe_temp_pap_from2to0, pipe_temp_rr2_from2to0, pipe_p_from2to0) pipeout(pipe_temp_pap_from0to1, pipe_temp_pap_from0to2, pipe_temp_rr2_from0to1, pipe_temp_rr2_from0to2, pipe_p_from0to1, pipe_p_from0to2)
-{
 	// V_SIZEの２つはエミュレーションのときはserialディレクティブの外に出す
 	float VAL_local[V_SIZE];
 	int COL_IND_local[V_SIZE];
 	float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE];
+
+// calc_CG_FPGA_slave(X_result, VAL, COL_IND, ROW_PTR, B, N/SPLIT_SIZE, N, K, VAL_SIZE);
+#pragma acc serial async(0) pipein(pipe_temp_pap_from1, pipe_temp_rr2_from1, pipe_p_from1) pipeout(pipe_temp_pap_from0, pipe_temp_rr2_from0, pipe_p_from0)
+{
 	// pはBLOCK_SIZEのまま、VAL_localとCOL_IND_localも多分行ごとに数が異なるからそのまま
 	float alfa, beta;//, x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE];
 	int ROW_PTR_local[(BLOCK_SIZE + 1)];
@@ -105,7 +206,7 @@ clock_gettime(CLOCK_REALTIME, &fpga_calc_start);
 		temp_rr1 += r[i] * r[i];
 	}
 
-	ROW_PTR_local[N_init1] = ROW_PTR[N_init1];
+	ROW_PTR_local[N_init] = ROW_PTR[N_init];
 
 #pragma acc loop independent
 	for(int i = 0; i < VAL_SIZE; ++i){
@@ -117,7 +218,7 @@ clock_gettime(CLOCK_REALTIME, &fpga_calc_start);
 	for(int i = 0; i < K; ++i){
 		temp_pap = 0.0f;
 #pragma acc loop reduction(+:temp_sum)
-		for(int j = 0; j < N_init1; ++j){
+		for(int j = 0; j < N_init; ++j){
 			temp_sum = 0.0f;
 			for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; ++l){
 				temp_sum += VAL_local[l] * p[COL_IND_local[l]];
@@ -127,62 +228,52 @@ clock_gettime(CLOCK_REALTIME, &fpga_calc_start);
 		}
 
 // #pragma acc loop //reduction(+:temp_pap)
-// 		for(int j = 0; j < N_init1; ++j){
+// 		for(int j = 0; j < N_init; ++j){
 // 			temp_pap += p[j] * y[j];
 // 		}
 
 // チャネル必要(temp_pap送信)
-pipe_temp_pap_from0to1[0] = temp_pap;
-pipe_temp_pap_from0to2[0] = temp_pap;
+pipe_temp_pap_from0[0] = temp_pap;
 // チャネル必要(temp_papを合計)
-temp_pap += pipe_temp_pap_from1to0[0];
-temp_pap += pipe_temp_pap_from2to0[0];
+temp_pap += pipe_temp_pap_from1[0];
 
 // 片方だけで計算しようかと思ったけど、パイプのほうが重そうなので全カーネルで計算
 		alfa = temp_rr1 / temp_pap;
 
 		temp_rr2 = 0.0f;
 // #pragma acc loop reduction(+:temp_rr2)
-		for(int j = 0; j < N_init1; ++j){
+		for(int j = 0; j < N_init; ++j){
 			x[j] += alfa * p[j];
 			r[j] -= alfa * y[j];
 			temp_rr2 += r[j] * r[j];
 		}
 // チャネル必要(temp_rr2送信)
-pipe_temp_rr2_from0to1[0] = temp_rr2;
-pipe_temp_rr2_from0to2[0] = temp_rr2;
+pipe_temp_rr2_from0[0] = temp_rr2;
 // チャネル必要(temp_rr2を合計)
-temp_rr2 += pipe_temp_rr2_from1to0[0];
-temp_rr2 += pipe_temp_rr2_from2to0[0];
+temp_rr2 += pipe_temp_rr2_from1[0];
 
 // 片方だけで計算しようかと思ったけど、パイプのほうが重そうなので全カーネルで計算
 		beta = temp_rr2 / temp_rr1;
 
-#pragma acc loop independent
-		for(int j = 0; j < N_init1; ++j){
+// #pragma acc loop independent
+		for(int j = 0; j < N_init; ++j){
 			p[j] = r[j] + beta * p[j];
 		}
 
-// カーネルごとの送信の順番を揃える必要がある
 // チャネル必要（各カーネルで担当外の要素の更新が必要）
-for(int j = 0; j < N_init1; ++j){
-	pipe_p_from0to1[0] = p[j];
-	pipe_p_from0to2[0] = p[j];
+for(int j = 0; j < N_init; ++j){
+	pipe_p_from0[0] = p[j];
 }
 // チャネル必要（各カーネルで担当外の要素の更新が必要）
-for(int j = N_init1; j < N_init2; ++j){
-	p[j] = pipe_p_from1to0[0];
-}
-// チャネル必要（各カーネルで担当外の要素の更新が必要）
-for(int j = N_init2; j < N; ++j){
-	p[j] = pipe_p_from2to0[0];
+for(int j = N_init; j < N; ++j){
+	p[j] = pipe_p_from1[0];
 }
 
 		temp_rr1 = temp_rr2;
 	}
 
-#pragma acc loop independent
-	for(int j = 0; j < N_init1; ++j){
+// #pragma acc loop independent
+	for(int j = 0; j < N_init; ++j){
 		X_result[j] = x[j];
 	}
 }
@@ -200,12 +291,12 @@ for(int j = N_init2; j < N; ++j){
 
 
 
-#pragma acc serial async(1) pipein(pipe_temp_pap_from0to1, pipe_temp_rr2_from0to1, pipe_p_from0to1, pipe_temp_pap_from2to1, pipe_temp_rr2_from2to1, pipe_p_from2to1) pipeout(pipe_temp_pap_from1to0, pipe_temp_pap_from1to2, pipe_temp_rr2_from1to0, pipe_temp_rr2_from1to2, pipe_p_from1to0, pipe_p_from1to2)
+#pragma acc serial async(1) pipein(pipe_temp_pap_from0, pipe_temp_rr2_from0, pipe_p_from0) pipeout(pipe_temp_pap_from1, pipe_temp_rr2_from1, pipe_p_from1)
 {
 	float alfa, beta;
-	float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE];  // エミュレーションのときはコメントアウト
-	float VAL_local[V_SIZE];    // エミュレーションのときはコメントアウト
-	int COL_IND_local[V_SIZE];  // エミュレーションのときはコメントアウト
+	// float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE];  // エミュレーションのときはコメントアウト
+	// float VAL_local[V_SIZE];    // エミュレーションのときはコメントアウト
+	// int COL_IND_local[V_SIZE];  // エミュレーションのときはコメントアウト
 	int ROW_PTR_local[(BLOCK_SIZE + 1)];
 	float temp_sum=0.0f, temp_pap, temp_rr1, temp_rr2;
 
@@ -230,7 +321,7 @@ for(int j = N_init2; j < N; ++j){
 	for(int i = 0; i < K; ++i){
 		temp_pap = 0.0f;
 #pragma acc loop reduction(+:temp_sum)
-		for(int j = N_init1; j < N_init2; ++j){
+		for(int j = N_init; j < N; ++j){
 			temp_sum = 0.0f;
 			for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; ++l){
 				temp_sum += VAL_local[l] * p[COL_IND_local[l]];
@@ -240,176 +331,56 @@ for(int j = N_init2; j < N; ++j){
 		}
 
 // #pragma acc loop //reduction(+:temp_pap)
-// 		for(int j = N_init1; j < N_init2; ++j){
+// 		for(int j = N_init; j < N; ++j){
 // 			temp_pap += p[j] * y[j];
 // 		}
 
 // チャネル必要(temp_pap送信)
-pipe_temp_pap_from1to0[0] = temp_pap;
-pipe_temp_pap_from1to2[0] = temp_pap;
+pipe_temp_pap_from1[0] = temp_pap;
 // チャネル必要(合計を受信)
-temp_pap += pipe_temp_pap_from0to1[0];
-temp_pap += pipe_temp_pap_from2to1[0];
+temp_pap += pipe_temp_pap_from0[0];
 
 // 片方だけで計算しようかと思ったけど、パイプのほうが重そうなので全カーネルで計算
 		alfa = temp_rr1 / temp_pap;
 
 		temp_rr2 = 0.0f;
 // #pragma acc loop reduction(+:temp_rr2)
-		for(int j = N_init1; j < N_init2; ++j){
+		for(int j = N_init; j < N; ++j){
 			x[j] += alfa * p[j];
 			r[j] -= alfa * y[j];
 			temp_rr2 += r[j] * r[j];
 		}
 // チャネル必要(temp_rr2送信)
-pipe_temp_rr2_from1to0[0] = temp_rr2;
-pipe_temp_rr2_from1to2[0] = temp_rr2;
+pipe_temp_rr2_from1[0] = temp_rr2;
 // チャネル必要(合計を受信)
-temp_rr2 += pipe_temp_rr2_from0to1[0];
-temp_rr2 += pipe_temp_rr2_from2to1[0];
+temp_rr2 += pipe_temp_rr2_from0[0];
 
 // 片方だけで計算しようかと思ったけど、パイプのほうが重そうなので全カーネルで計算
 		beta = temp_rr2 / temp_rr1;
 
 // #pragma acc loop independent
-		for(int j = N_init1; j < N_init2; ++j){
+		for(int j = N_init; j < N; ++j){
 			p[j] = r[j] + beta * p[j];
 		}
 
-// カーネルごとの送信の順番を揃える必要がある
 // チャネル必要（各カーネルで担当外の要素の更新が必要）
-for(int j = 0; j < N_init1; ++j){
-	p[j] = pipe_p_from0to1[0];
+for(int j = 0; j < N_init; ++j){
+	p[j] = pipe_p_from0[0];
 }
 // チャネル必要（各カーネルで担当外の要素の更新が必要）
-for(int j = N_init1; j < N_init2; ++j){
-	pipe_p_from1to0[0] = p[j];
-	pipe_p_from1to2[0] = p[j];
-}
-// チャネル必要（各カーネルで担当外の要素の更新が必要）
-for(int j = N_init2; j < N; ++j){
-	p[j] = pipe_p_from2to1[0];
+for(int j = N_init; j < N; ++j){
+	pipe_p_from1[0] = p[j];
 }
 
 		temp_rr1 = temp_rr2;
 	}
 
 // #pragma acc loop independent
-	for(int j = N_init1; j < N_init2; ++j){
+	for(int j = N_init; j < N; ++j){
 		X_result[j] = x[j];
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-#pragma acc serial async(2) pipein(pipe_temp_pap_from0to2, pipe_temp_rr2_from0to2, pipe_p_from0to2, pipe_temp_pap_from1to2, pipe_temp_rr2_from1to2, pipe_p_from1to2) pipeout(pipe_temp_pap_from2to0, pipe_temp_pap_from2to1, pipe_temp_rr2_from2to0, pipe_temp_rr2_from2to1, pipe_p_from2to0, pipe_p_from2to1)
-{
-	float alfa, beta;
-	float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE];  // エミュレーションのときはコメントアウト
-	float VAL_local[V_SIZE];    // エミュレーションのときはコメントアウト
-	int COL_IND_local[V_SIZE];  // エミュレーションのときはコメントアウト
-	int ROW_PTR_local[(BLOCK_SIZE + 1)];
-	float temp_sum=0.0f, temp_pap, temp_rr1, temp_rr2;
-
-	temp_rr1 = 0.0f;
-#pragma acc loop independent //reduction(+:temp_rr1)
-	for(int i = 0; i < N; ++i){
-		ROW_PTR_local[i] = ROW_PTR[i];
-		x[i] = 0.0f;
-		r[i] = B[i];
-		p[i] = B[i];
-		temp_rr1 += r[i] * r[i];
-	}
-
-	ROW_PTR_local[N] = ROW_PTR[N];
-
-#pragma acc loop independent
-	for(int i = 0; i < VAL_SIZE; ++i){
-		COL_IND_local[i] = COL_IND[i];
-		VAL_local[i] = VAL[i];
-	}
-
-	for(int i = 0; i < K; ++i){
-		temp_pap = 0.0f;
-#pragma acc loop reduction(+:temp_sum)
-		for(int j = N_init2; j < N; ++j){
-			temp_sum = 0.0f;
-			for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; ++l){
-				temp_sum += VAL_local[l] * p[COL_IND_local[l]];
-			}
-			y[j] = temp_sum;
-			temp_pap += p[j] * temp_sum;
-		}
-
-// #pragma acc loop //reduction(+:temp_pap)
-// 		for(int j = N_init2; j < N; ++j){
-// 			temp_pap += p[j] * y[j];
-// 		}
-
-// チャネル必要(temp_pap送信)
-pipe_temp_pap_from2to0[0] = temp_pap;
-pipe_temp_pap_from2to1[0] = temp_pap;
-// チャネル必要(合計を受信)
-temp_pap += pipe_temp_pap_from0to2[0];
-temp_pap += pipe_temp_pap_from1to2[0];
-
-// 片方だけで計算しようかと思ったけど、パイプのほうが重そうなので全カーネルで計算
-		alfa = temp_rr1 / temp_pap;
-
-		temp_rr2 = 0.0f;
-// #pragma acc loop reduction(+:temp_rr2)
-		for(int j = N_init2; j < N; ++j){
-			x[j] += alfa * p[j];
-			r[j] -= alfa * y[j];
-			temp_rr2 += r[j] * r[j];
-		}
-// チャネル必要(temp_rr2送信)
-pipe_temp_rr2_from2to0[0] = temp_rr2;
-pipe_temp_rr2_from2to1[0] = temp_rr2;
-// チャネル必要(合計を受信)
-temp_rr2 += pipe_temp_rr2_from0to2[0];
-temp_rr2 += pipe_temp_rr2_from1to2[0];
-
-// 片方だけで計算しようかと思ったけど、パイプのほうが重そうなので全カーネルで計算
-		beta = temp_rr2 / temp_rr1;
-
-// #pragma acc loop independent
-		for(int j = N_init2; j < N; ++j){
-			p[j] = r[j] + beta * p[j];
-		}
-
-// カーネルごとの送信の順番を揃える必要がある
-// チャネル必要（各カーネルで担当外の要素の更新が必要）
-for(int j = 0; j < N_init1; ++j){
-	p[j] = pipe_p_from0to2[0];
-}
-// チャネル必要（各カーネルで担当外の要素の更新が必要）
-for(int j = N_init1; j < N_init2; ++j){
-	p[j] = pipe_p_from1to2[0];
-}
-// チャネル必要（各カーネルで担当外の要素の更新が必要）
-for(int j = N_init2; j < N; ++j){
-	pipe_p_from2to0[0] = p[j];
-	pipe_p_from2to1[0] = p[j];
-}
-
-		temp_rr1 = temp_rr2;
-	}
-
-// #pragma acc loop independent
-	for(int j = N_init2; j < N; ++j){
-		X_result[j] = x[j];
-	}
-}
+// #pragma acc wait(1)
 
 
 
