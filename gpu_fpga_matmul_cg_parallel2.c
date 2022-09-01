@@ -153,7 +153,7 @@ void funcFPGA(
 #pragma accomn target_dev(FPGA)
 // ここに波括弧があるとacc_init()がエラーになる
 
-acc_init(acc_device_altera_emulator);
+// acc_init(acc_device_altera_emulator);
 
 int N_init = N/SPLIT_SIZE;
 
@@ -183,14 +183,14 @@ printf("Host to FPGA time: %lf sec\n", time_diff(&fpga_copyin_start, &fpga_copyi
 clock_gettime(CLOCK_REALTIME, &fpga_calc_start);
 
 
+// calc_CG_FPGA_slave(X_result, VAL, COL_IND, ROW_PTR, B, N/SPLIT_SIZE, N, K, VAL_SIZE);
+#pragma acc serial async(0) pipein(pipe_temp_pap_from1, pipe_temp_rr2_from1, pipe_p_from1) pipeout(pipe_temp_pap_from0, pipe_temp_rr2_from0, pipe_p_from0)
+{
 	// V_SIZEの２つはエミュレーションのときはserialディレクティブの外に出す
 	float VAL_local[V_SIZE];
 	int COL_IND_local[V_SIZE];
 	float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE];
 
-// calc_CG_FPGA_slave(X_result, VAL, COL_IND, ROW_PTR, B, N/SPLIT_SIZE, N, K, VAL_SIZE);
-#pragma acc serial async(0) pipein(pipe_temp_pap_from1, pipe_temp_rr2_from1, pipe_p_from1) pipeout(pipe_temp_pap_from0, pipe_temp_rr2_from0, pipe_p_from0)
-{
 	// pはBLOCK_SIZEのまま、VAL_localとCOL_IND_localも多分行ごとに数が異なるからそのまま
 	float alfa, beta;//, x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE];
 	int ROW_PTR_local[(BLOCK_SIZE + 1)];
@@ -241,7 +241,7 @@ temp_pap += pipe_temp_pap_from1[0];
 		alfa = temp_rr1 / temp_pap;
 
 		temp_rr2 = 0.0f;
-// #pragma acc loop reduction(+:temp_rr2)
+#pragma acc loop reduction(+:temp_rr2)
 		for(int j = 0; j < N_init; ++j){
 			x[j] += alfa * p[j];
 			r[j] -= alfa * y[j];
@@ -265,8 +265,8 @@ for(int j = 0; j < N_init; ++j){
 	pipe_p_from0[0] = p[j];
 }
 // チャネル必要（各カーネルで担当外の要素の更新が必要）
-for(int j = N_init; j < N; ++j){
-	p[j] = pipe_p_from1[0];
+for(int j = 0; j < N_init; ++j){
+	p[j+N_init] = pipe_p_from1[0];
 }
 
 		temp_rr1 = temp_rr2;
@@ -294,9 +294,9 @@ for(int j = N_init; j < N; ++j){
 #pragma acc serial async(1) pipein(pipe_temp_pap_from0, pipe_temp_rr2_from0, pipe_p_from0) pipeout(pipe_temp_pap_from1, pipe_temp_rr2_from1, pipe_p_from1)
 {
 	float alfa, beta;
-	// float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE];  // エミュレーションのときはコメントアウト
-	// float VAL_local[V_SIZE];    // エミュレーションのときはコメントアウト
-	// int COL_IND_local[V_SIZE];  // エミュレーションのときはコメントアウト
+	float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE];  // エミュレーションのときはコメントアウト
+	float VAL_local[V_SIZE];    // エミュレーションのときはコメントアウト
+	int COL_IND_local[V_SIZE];  // エミュレーションのときはコメントアウト
 	int ROW_PTR_local[(BLOCK_SIZE + 1)];
 	float temp_sum=0.0f, temp_pap, temp_rr1, temp_rr2;
 
@@ -321,13 +321,13 @@ for(int j = N_init; j < N; ++j){
 	for(int i = 0; i < K; ++i){
 		temp_pap = 0.0f;
 #pragma acc loop reduction(+:temp_sum)
-		for(int j = N_init; j < N; ++j){
+		for(int j = 0; j < N_init; ++j){
 			temp_sum = 0.0f;
-			for(int l = ROW_PTR_local[j]; l < ROW_PTR_local[j + 1]; ++l){
+			for(int l = ROW_PTR_local[j+N_init]; l < ROW_PTR_local[j + N_init + 1]; ++l){
 				temp_sum += VAL_local[l] * p[COL_IND_local[l]];
 			}
-			y[j] = temp_sum;
-			temp_pap += p[j] * temp_sum;
+			y[j+N_init] = temp_sum;
+			temp_pap += p[j+N_init] * temp_sum;
 		}
 
 // #pragma acc loop //reduction(+:temp_pap)
@@ -344,11 +344,11 @@ temp_pap += pipe_temp_pap_from0[0];
 		alfa = temp_rr1 / temp_pap;
 
 		temp_rr2 = 0.0f;
-// #pragma acc loop reduction(+:temp_rr2)
-		for(int j = N_init; j < N; ++j){
-			x[j] += alfa * p[j];
-			r[j] -= alfa * y[j];
-			temp_rr2 += r[j] * r[j];
+#pragma acc loop reduction(+:temp_rr2)
+		for(int j = 0; j < N_init; ++j){
+			x[j+N_init] += alfa * p[j+N_init];
+			r[j+N_init] -= alfa * y[j+N_init];
+			temp_rr2 += r[j+N_init] * r[j+N_init];
 		}
 // チャネル必要(temp_rr2送信)
 pipe_temp_rr2_from1[0] = temp_rr2;
@@ -359,8 +359,8 @@ temp_rr2 += pipe_temp_rr2_from0[0];
 		beta = temp_rr2 / temp_rr1;
 
 // #pragma acc loop independent
-		for(int j = N_init; j < N; ++j){
-			p[j] = r[j] + beta * p[j];
+		for(int j = 0; j < N_init; ++j){
+			p[j+N_init] = r[j+N_init] + beta * p[j+N_init];
 		}
 
 // チャネル必要（各カーネルで担当外の要素の更新が必要）
@@ -368,16 +368,16 @@ for(int j = 0; j < N_init; ++j){
 	p[j] = pipe_p_from0[0];
 }
 // チャネル必要（各カーネルで担当外の要素の更新が必要）
-for(int j = N_init; j < N; ++j){
-	pipe_p_from1[0] = p[j];
+for(int j = 0; j < N_init; ++j){
+	pipe_p_from1[0] = p[j+N_init];
 }
 
 		temp_rr1 = temp_rr2;
 	}
 
 // #pragma acc loop independent
-	for(int j = N_init; j < N; ++j){
-		X_result[j] = x[j];
+	for(int j = 0; j < N_init; ++j){
+		X_result[j+N_init] = x[j+N_init];
 	}
 }
 // #pragma acc wait(1)

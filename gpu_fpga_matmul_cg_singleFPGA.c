@@ -133,7 +133,7 @@ void funcFPGA(
 {
 #pragma accomn target_dev(FPGA)
 
-acc_init(acc_device_altera_emulator);
+// acc_init(acc_device_altera_emulator);
 #pragma acc enter data create(VAL[0:VAL_SIZE], COL_IND[0:VAL_SIZE], ROW_PTR[0:N+1], B[0:N], N, K, VAL_SIZE) create(X_result[0:N])
 
 struct timespec fpga_copyin_start;
@@ -162,12 +162,12 @@ printf("Host to FPGA time: %lf sec\n", time_diff(&fpga_copyin_start, &fpga_copyi
 clock_gettime(CLOCK_REALTIME, &fpga_calc_start);
 
 // calc_CG_FPGA(X_result, VAL, COL_IND, ROW_PTR, B, N/SPLIT_SIZE, N, K, VAL_SIZE);
-	float VAL_local[V_SIZE];    // エミュレーションのときはserialディレクティブの外
-	int COL_IND_local[V_SIZE];  // エミュレーションのときはserialディレクティブの外
 
 #pragma acc serial async(0) //pipein(pipe_temp_rr1_split1, pipe_temp_pap_split1, pipe_temp_rr2_split1, pipe_p2) pipeout(pipe_temp_rr1_result1, pipe_temp_pap_result1, pipe_temp_rr2_result1, pipe_p1)
 {
 	float x[BLOCK_SIZE], r[BLOCK_SIZE], p[BLOCK_SIZE], y[BLOCK_SIZE], alfa, beta;
+	float VAL_local[V_SIZE];    // エミュレーションのときはserialディレクティブの外
+	int COL_IND_local[V_SIZE];  // エミュレーションのときはserialディレクティブの外
 	int ROW_PTR_local[(BLOCK_SIZE + 1)];
 	float temp_sum=0.0f, temp_pap, temp_rr1, temp_rr2;
 
